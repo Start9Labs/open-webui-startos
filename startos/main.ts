@@ -7,7 +7,7 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
    *
    * In this section, we fetch any resources or run any desired preliminary commands.
    */
-  console.info('Starting Hello World!')
+  console.info('Starting Open WebUI!')
 
   /**
    * ======================== Daemons ========================
@@ -19,18 +19,26 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
   return sdk.Daemons.of(effects, started).addDaemon('primary', {
     subcontainer: await sdk.SubContainer.of(
       effects,
-      { imageId: 'hello-world' },
+      { imageId: 'open-webui' },
       sdk.Mounts.of().mountVolume({
         volumeId: 'main',
         subpath: null,
-        mountpoint: '/data',
+        mountpoint: '/app/backend/data',
         readonly: false,
       }),
-      'hello-world-sub',
+      'open-webui-sub',
     ),
-    exec: { command: ['hello-world'] },
+    exec: {
+      command: sdk.useEntrypoint(),
+      // @TODO delete when fixed
+      user: '0',
+      env: {
+        OLLAMA_BASE_URL: 'ollama.startos',
+      },
+    },
     ready: {
       display: 'Web Interface',
+      gracePeriod: 60000,
       fn: () =>
         sdk.healthCheck.checkPortListening(effects, uiPort, {
           successMessage: 'The web interface is ready',

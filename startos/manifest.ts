@@ -7,24 +7,23 @@ const architectures =
   BUILD === 'x86_64' || BUILD === 'aarch64' ? [BUILD] : ['x86_64', 'aarch64']
 
 export const manifest = setupManifest({
-  id: 'hello-world',
-  title: 'Hello World',
-  license: 'MIT',
-  wrapperRepo: 'https://github.com/Start9Labs/hello-world-startos',
-  upstreamRepo: 'https://github.com/Start9Labs/hello-world',
-  supportSite: 'https://docs.start9.com/',
-  marketingSite: 'https://start9.com/',
-  donationUrl: 'https://donate.start9.com/',
-  docsUrl:
-    'https://github.com/Start9Labs/hello-world-startos/blob/master/instructions.md',
+  id: 'open-webui',
+  title: 'Open WebUI',
+  license: 'custom',
+  wrapperRepo: 'https://github.com/Start9Labs/open-webui-startos/',
+  upstreamRepo: 'https://github.com/open-webui/open-webui/',
+  supportSite: 'https://docs.openwebui.com/',
+  marketingSite: 'https://docs.openwebui.com/',
+  donationUrl: null,
+  docsUrl: 'https://docs.openwebui.com/',
   description: {
-    short: 'Bare bones example of a StartOS service',
-    long: 'Hello World is a template service that provides examples of basic StartOS features.',
+    short: 'Self-hosted AI platform designed to operate entirely offline',
+    long: 'Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform designed to operate entirely offline. It supports various LLM runners like Ollama and OpenAI-compatible APIs, with built-in inference engine for RAG, making it a powerful AI deployment solution.',
   },
   volumes: ['main'],
   images: {
-    'hello-world': {
-      source: { dockerTag: 'start9/hello-world' },
+    'open-webui': {
+      source: { dockerTag: 'ghcr.io/open-webui/open-webui:0.6.41' },
       arch: architectures,
     } as SDKImageInputSpec,
   },
@@ -39,5 +38,14 @@ export const manifest = setupManifest({
     start: null,
     stop: null,
   },
-  dependencies: {},
+  dependencies: {
+    ollama: {
+      optional: false,
+      description: 'Can be used for hosting local LLMs',
+      metadata: {
+        icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/ollama-icon.png',
+        title: 'Ollama',
+      },
+    },
+  },
 })

@@ -36,7 +36,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     },
     ready: {
       display: 'Web Interface',
-      gracePeriod: 60000,
+      gracePeriod: 120000,
       fn: () =>
         sdk.healthCheck.checkPortListening(effects, uiPort, {
           successMessage: 'The web interface is ready',

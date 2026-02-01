@@ -1,5 +1,6 @@
 import { sdk } from './sdk'
 import { uiPort } from './utils'
+import { i18n } from './i18n'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   /**
@@ -7,7 +8,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
    *
    * In this section, we fetch any resources or run any desired preliminary commands.
    */
-  console.info('Starting Open WebUI!')
+  console.info(i18n('Starting Open WebUI!'))
 
   /**
    * ======================== Daemons ========================
@@ -35,12 +36,12 @@ export const main = sdk.setupMain(async ({ effects }) => {
       },
     },
     ready: {
-      display: 'Web Interface',
+      display: i18n('Web Interface'),
       gracePeriod: 120000,
       fn: () =>
         sdk.healthCheck.checkPortListening(effects, uiPort, {
-          successMessage: 'The web interface is ready',
-          errorMessage: 'The web interface is not ready',
+          successMessage: i18n('The web interface is ready'),
+          errorMessage: i18n('The web interface is not ready'),
         }),
     },
     requires: [],

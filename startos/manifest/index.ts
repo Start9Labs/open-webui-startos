@@ -1,4 +1,5 @@
 import { setupManifest } from '@start9labs/start-sdk'
+import i18n from './i18n'
 
 export const manifest = setupManifest({
   id: 'open-webui',
@@ -10,16 +11,14 @@ export const manifest = setupManifest({
   marketingSite: 'https://docs.openwebui.com/',
   donationUrl: null,
   docsUrl: 'https://docs.openwebui.com/',
-  description: {
-    short: 'Self-hosted AI platform designed to operate entirely offline',
-    long: 'Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform designed to operate entirely offline. It supports various LLM runners like Ollama and OpenAI-compatible APIs, with built-in inference engine for RAG, making it a powerful AI deployment solution.',
-  },
+  description: i18n.description,
   volumes: ['main'],
   images: {
     'open-webui': {
       source: {
-        dockerTag: 'ghcr.io/open-webui/open-webui:0.6.41',
+        dockerTag: 'ghcr.io/open-webui/open-webui:0.7.2',
       },
+      arch: ['x86_64', 'aarch64'],
     },
   },
   dependencies: {

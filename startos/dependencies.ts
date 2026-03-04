@@ -4,7 +4,7 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
   return {
     ollama: {
       kind: 'running',
-      versionRange: '>=0.13.5:0-alpha.0',
+      versionRange: '>=0.17.5:0-alpha.0',
       healthChecks: ['primary'],
     },
   }

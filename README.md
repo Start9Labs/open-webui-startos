@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icon.png" alt="Project Logo" width="21%">
+  <img src="icon.svg" alt="Project Logo" width="21%">
 </p>
 
 # Open WebUI for StartOS
@@ -18,7 +18,7 @@ This package runs **1 container**:
 
 | Container | Image | Purpose |
 |-----------|-------|---------|
-| open-webui | `ghcr.io/open-webui/open-webui:0.7.2` | Web UI and AI platform |
+| open-webui | `ghcr.io/open-webui/open-webui` | Web UI and AI platform |
 
 ## Volumes
 
@@ -59,7 +59,7 @@ None. All configuration is done through the web interface.
 
 | Dependency | Requirement | Health Checks | Description |
 |------------|-------------|---------------|-------------|
-| Ollama | Running, >=0.13.5 | primary | Required LLM backend |
+| Ollama | Running | primary | Required LLM backend |
 
 Ollama must be installed and running. Open WebUI automatically connects to it at `ollama.startos`.
 
@@ -98,10 +98,9 @@ The extended grace period accounts for Open WebUI's initialization time.
 
 ```yaml
 package_id: open-webui
-upstream_version: 0.7.2
 containers:
   - name: open-webui
-    image: ghcr.io/open-webui/open-webui:0.7.2
+    image: ghcr.io/open-webui/open-webui
 
 volumes:
   main:
@@ -119,7 +118,7 @@ dependencies:
   ollama:
     required: true
     kind: running
-    version: ">=0.13.5"
+    version: ">=0.17.5"
     health_checks:
       - primary
 

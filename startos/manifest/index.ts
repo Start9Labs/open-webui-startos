@@ -1,22 +1,29 @@
 import { setupManifest } from '@start9labs/start-sdk'
 import i18n from './i18n'
 
+const depOllamaDescription = {
+  en_US: 'Can be used for hosting local LLMs',
+  es_ES: 'Se puede usar para alojar LLMs locales',
+  de_DE: 'Kann zum Hosten lokaler LLMs verwendet werden',
+  pl_PL: 'Może być używany do hostowania lokalnych LLM',
+  fr_FR: "Peut être utilisé pour héberger des LLM locaux",
+}
+
 export const manifest = setupManifest({
   id: 'open-webui',
   title: 'Open WebUI',
   license: 'custom',
-  wrapperRepo: 'https://github.com/Start9Labs/open-webui-startos/',
+  packageRepo: 'https://github.com/Start9Labs/open-webui-startos/tree/update/040',
   upstreamRepo: 'https://github.com/open-webui/open-webui/',
-  supportSite: 'https://docs.openwebui.com/',
-  marketingSite: 'https://docs.openwebui.com/',
+  marketingUrl: 'https://docs.openwebui.com/',
   donationUrl: null,
-  docsUrl: 'https://docs.openwebui.com/',
+  docsUrls: ['https://docs.openwebui.com/'],
   description: i18n.description,
   volumes: ['main'],
   images: {
     'open-webui': {
       source: {
-        dockerTag: 'ghcr.io/open-webui/open-webui:0.7.2',
+        dockerTag: 'ghcr.io/open-webui/open-webui:0.8.8',
       },
       arch: ['x86_64', 'aarch64'],
     },
@@ -24,9 +31,9 @@ export const manifest = setupManifest({
   dependencies: {
     ollama: {
       optional: false,
-      description: 'Can be used for hosting local LLMs',
+      description: depOllamaDescription,
       metadata: {
-        icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/ollama-icon.png',
+        icon: 'https://raw.githubusercontent.com/Start9Labs/ollama-startos/update/040/icon.svg',
         title: 'Ollama',
       },
     },

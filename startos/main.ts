@@ -32,7 +32,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     exec: {
       command: sdk.useEntrypoint(),
       env: {
-        OLLAMA_BASE_URL: 'ollama.startos',
+        OLLAMA_BASE_URL: 'http://ollama.startos:11434',
       },
     },
     ready: {

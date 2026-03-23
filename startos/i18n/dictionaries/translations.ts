@@ -8,6 +8,10 @@ export default {
     3: 'La interfaz web no está lista',
     4: 'Interfaz web',
     5: 'La interfaz web de Open WebUI',
+    6: 'Restablecer contraseña de administrador',
+    7: 'Restablecer la contraseña del usuario administrador en caso de olvidarla',
+    8: 'Éxito',
+    9: 'La nueva contraseña de administrador está abajo',
   },
   de_DE: {
     0: 'Open WebUI wird gestartet!',
@@ -16,6 +20,10 @@ export default {
     3: 'Die Weboberfläche ist nicht bereit',
     4: 'Web-UI',
     5: 'Die Weboberfläche von Open WebUI',
+    6: 'Admin-Passwort zurücksetzen',
+    7: 'Admin-Passwort zurücksetzen, falls Sie es vergessen haben',
+    8: 'Erfolg',
+    9: 'Das neue Admin-Passwort ist unten',
   },
   pl_PL: {
     0: 'Uruchamianie Open WebUI!',
@@ -24,6 +32,10 @@ export default {
     3: 'Interfejs webowy nie jest gotowy',
     4: 'Interfejs webowy',
     5: 'Interfejs webowy Open WebUI',
+    6: 'Zresetuj hasło administratora',
+    7: 'Zresetuj hasło administratora w przypadku jego zapomnienia',
+    8: 'Sukces',
+    9: 'Nowe hasło administratora znajduje się poniżej',
   },
   fr_FR: {
     0: 'Démarrage d\'Open WebUI !',
@@ -32,5 +44,9 @@ export default {
     3: 'L\'interface web n\'est pas prête',
     4: 'Interface web',
     5: 'L\'interface web d\'Open WebUI',
+    6: 'Réinitialiser le mot de passe administrateur',
+    7: 'Réinitialiser le mot de passe administrateur en cas d\'oubli',
+    8: 'Succès',
+    9: 'Le nouveau mot de passe administrateur est ci-dessous',
   },
 } satisfies Record<string, LangDict>

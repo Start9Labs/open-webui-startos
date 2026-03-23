@@ -1,9 +1,9 @@
 import { VersionInfo } from '@start9labs/start-sdk'
 
-export const v_0_8_10_0_b1 = VersionInfo.of({
-  version: '0.8.10:0-beta.1',
+export const v_0_8_10_0_b2 = VersionInfo.of({
+  version: '0.8.10:0-beta.2',
   releaseNotes: {
-    en_US: 'Update Open WebUI to 0.8.10',
+    en_US: 'Update to StartOS SDK beta.65',
   },
   migrations: {
     up: async ({ effects }) => {},

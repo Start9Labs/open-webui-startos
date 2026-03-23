@@ -19,7 +19,7 @@ export const manifest = setupManifest({
   donationUrl: null,
   docsUrls: ['https://docs.openwebui.com/'],
   description: i18n.description,
-  volumes: ['main'],
+  volumes: ['open-webui', 'startos'],
   images: {
     'open-webui': {
       source: {

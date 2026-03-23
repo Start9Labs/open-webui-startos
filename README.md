@@ -4,29 +4,53 @@
 
 # Open WebUI for StartOS
 
-This repository packages [Open WebUI](https://github.com/open-webui/open-webui) for StartOS. This document describes what makes this package different from a default Open WebUI deployment.
+> **Upstream docs:** <https://docs.openwebui.com/>
+>
+> Everything not listed in this document should behave the same as upstream
+> Open WebUI. If a feature, setting, or behavior is not mentioned here, the
+> upstream documentation is accurate and fully applicable.
 
-For general Open WebUI usage and features, see the [upstream documentation](https://docs.openwebui.com/).
+[Open WebUI](https://github.com/open-webui/open-webui) is an extensible, self-hosted AI interface that connects to Ollama for running local LLMs. This repository packages it for [StartOS](https://github.com/Start9Labs/start-os).
 
-## How This Differs from Upstream
+- **Upstream repo:** <https://github.com/open-webui/open-webui>
+- **Wrapper repo:** <https://github.com/Start9Labs/open-webui-startos>
 
-This package pre-configures Open WebUI to connect to the Ollama service on StartOS. Ollama is a required dependency and must be running for Open WebUI to function. All other configuration is done through the Open WebUI interface.
+---
 
-## Container Runtime
+## Table of Contents
 
-This package runs **1 container**:
+- [Image and Container Runtime](#image-and-container-runtime)
+- [Volume and Data Layout](#volume-and-data-layout)
+- [Installation and First-Run Flow](#installation-and-first-run-flow)
+- [Configuration Management](#configuration-management)
+- [Network Access and Interfaces](#network-access-and-interfaces)
+- [Actions (StartOS UI)](#actions-startos-ui)
+- [Dependencies](#dependencies)
+- [Backups and Restore](#backups-and-restore)
+- [Health Checks](#health-checks)
+- [Limitations and Differences](#limitations-and-differences)
+- [What Is Unchanged from Upstream](#what-is-unchanged-from-upstream)
 
-| Container | Image | Purpose |
-|-----------|-------|---------|
-| open-webui | `ghcr.io/open-webui/open-webui` | Web UI and AI platform |
+---
 
-## Volumes
+## Image and Container Runtime
 
-| Volume | Contents | Backed Up |
-|--------|----------|-----------|
-| `main` | Application data, user settings, chat history | Yes |
+| Property | Value |
+|----------|-------|
+| Image | `ghcr.io/open-webui/open-webui` |
+| Architectures | x86_64, aarch64 |
+| Entrypoint | Upstream default |
 
-Mounted at `/app/backend/data` inside the container.
+## Volume and Data Layout
+
+| Volume | Mount Point | Purpose |
+|--------|-------------|---------|
+| `open-webui` | `/app/backend/data` | Application data, user settings, chat history, SQLite database |
+| `startos` | — | StartOS-specific files (`store.json`) |
+
+## Installation and First-Run Flow
+
+On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.json`. The app is ready to use immediately — open the web UI and register your admin account.
 
 ## Configuration Management
 
@@ -34,7 +58,13 @@ Mounted at `/app/backend/data` inside the container.
 
 | Setting | Value | Purpose |
 |---------|-------|---------|
-| `OLLAMA_BASE_URL` | `ollama.startos` | Connection to Ollama service |
+| `OLLAMA_BASE_URL` | `http://ollama.startos:11434` | Connection to Ollama service |
+| `WEBUI_SECRET_KEY` | Auto-generated | Session signing key |
+| `CORS_ALLOW_ORIGIN` | `*` | Allow cross-origin requests |
+| `ENABLE_VERSION_UPDATE_CHECK` | `false` | Disable upstream update checks |
+| `ENABLE_COMMUNITY_SHARING` | `false` | Disable community sharing |
+| `ENABLE_ADMIN_ANALYTICS` | `false` | Disable analytics |
+| `WEBUI_SESSION_COOKIE_SECURE` | `true` | Secure session cookies |
 
 ### User-Configurable Settings
 
@@ -45,28 +75,37 @@ All other configuration is done through the Open WebUI web interface:
 - API connections (OpenAI-compatible, etc.)
 - System prompts and presets
 
-## Network Interfaces
+## Network Access and Interfaces
 
 | Interface | Type | Port | Description |
 |-----------|------|------|-------------|
 | Web UI | ui | 8080 | Main Open WebUI interface |
 
-## Actions
+## Actions (StartOS UI)
 
-None. All configuration is done through the web interface.
+| Action | Description |
+|--------|-------------|
+| Reset Admin Password | Generates a new random password for the admin user |
 
 ## Dependencies
 
 | Dependency | Requirement | Health Checks | Description |
 |------------|-------------|---------------|-------------|
-| Ollama | Running | primary | Required LLM backend |
+| Ollama | Running (`>=0.18.0`) | primary | Required LLM backend |
 
-Ollama must be installed and running. Open WebUI automatically connects to it at `ollama.startos`.
+Ollama must be installed and running. Open WebUI automatically connects to it at `http://ollama.startos:11434`.
 
-## Backups
+## Backups and Restore
 
-All data is backed up:
-- `main` volume - user data, chat history, settings, uploaded documents
+**Included in backup:**
+
+- `open-webui` volume — Application data, chat history, user accounts, SQLite database
+- `startos` volume — Secret key
+
+**Restore behavior:**
+
+- All data, accounts, and chat history are restored
+- No reconfiguration needed
 
 ## Health Checks
 
@@ -76,13 +115,13 @@ All data is backed up:
 
 The extended grace period accounts for Open WebUI's initialization time.
 
-## Limitations
+## Limitations and Differences
 
 1. **Ollama required**: Cannot run without Ollama; external OpenAI-compatible APIs can be configured through the UI but Ollama dependency is mandatory
 2. **No GPU acceleration**: Performance depends on StartOS hardware; large models may be slow
 3. **Model downloads**: Must download models through Ollama, not directly in Open WebUI
 
-## What's Unchanged
+## What Is Unchanged from Upstream
 
 - Full Open WebUI feature set
 - User authentication and multi-user support
@@ -91,6 +130,12 @@ The extended grace period accounts for Open WebUI's initialization time.
 - Model parameter customization
 - OpenAI-compatible API configuration (via web UI)
 - Plugin/extension support
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and development workflow.
 
 ---
 
@@ -103,31 +148,42 @@ containers:
     image: ghcr.io/open-webui/open-webui
 
 volumes:
-  main:
-    backup: true
+  open-webui:
     mountpoint: /app/backend/data
+    purpose: app data, chat history, SQLite database
+  startos:
+    purpose: store.json (WEBUI_SECRET_KEY)
 
 interfaces:
   ui:
     type: ui
     port: 8080
 
-actions: []
+actions:
+  - reset-password: Reset Admin Password
 
 dependencies:
   ollama:
     required: true
     kind: running
-    version: ">=0.17.5"
+    version: ">=0.18.0"
     health_checks:
       - primary
 
 auto_configure:
-  - OLLAMA_BASE_URL: ollama.startos
+  - OLLAMA_BASE_URL: http://ollama.startos:11434
+  - WEBUI_SECRET_KEY: auto-generated
+  - CORS_ALLOW_ORIGIN: "*"
+  - ENABLE_VERSION_UPDATE_CHECK: false
+  - ENABLE_COMMUNITY_SHARING: false
+  - ENABLE_ADMIN_ANALYTICS: false
+  - WEBUI_SESSION_COOKIE_SECURE: true
 
 health_checks:
   - name: Web Interface
     method: port_listening
     port: 8080
     grace_period: 120000
+
+backup_volumes: [open-webui, startos]
 ```

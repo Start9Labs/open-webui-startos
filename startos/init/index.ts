@@ -4,12 +4,12 @@ import { setDependencies } from '../dependencies'
 import { versionGraph } from '../versions'
 import { setInterfaces } from '../interfaces'
 import { sdk } from '../sdk'
-import { initSecretKey } from './initSecretKey'
+import { seedFiles } from './initSecretKey'
 
 export const init = sdk.setupInit(
-  initSecretKey,
   restoreInit,
   versionGraph,
+  seedFiles,
   setInterfaces,
   setDependencies,
   actions,

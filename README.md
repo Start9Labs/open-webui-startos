@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="icon.svg" alt="Project Logo" width="21%">
+  <img src="icon.svg" alt="Open WebUI Logo" width="21%">
 </p>
 
-# Open WebUI for StartOS
+# Open WebUI on StartOS
 
 > **Upstream docs:** <https://docs.openwebui.com/>
 >
@@ -30,6 +30,8 @@
 - [Health Checks](#health-checks)
 - [Limitations and Differences](#limitations-and-differences)
 - [What Is Unchanged from Upstream](#what-is-unchanged-from-upstream)
+- [Contributing](#contributing)
+- [Quick Reference for AI Consumers](#quick-reference-for-ai-consumers)
 
 ---
 
@@ -83,15 +85,19 @@ All other configuration is done through the Open WebUI web interface:
 
 ## Actions (StartOS UI)
 
-| Action | Description |
-|--------|-------------|
-| Reset Admin Password | Generates a new random password for the admin user |
+### Reset Admin Password (`reset-password`)
+
+- **Purpose:** Generates a new random 22-character password for the first admin user
+- **Visibility:** Enabled
+- **Availability:** Any status (running or stopped)
+- **Inputs:** None
+- **Outputs:** Displays the new password (masked, copyable)
 
 ## Dependencies
 
-| Dependency | Requirement | Health Checks | Description |
-|------------|-------------|---------------|-------------|
-| Ollama | Running (`>=0.18.0`) | primary | Required LLM backend |
+| Dependency | Required | Version Constraint | Health Checks | Purpose |
+|------------|----------|-------------------|---------------|---------|
+| Ollama | Yes | `>=0.19.0` | `primary` | LLM backend for model inference |
 
 Ollama must be installed and running. Open WebUI automatically connects to it at `http://ollama.startos:11434`.
 
@@ -109,9 +115,9 @@ Ollama must be installed and running. Open WebUI automatically connects to it at
 
 ## Health Checks
 
-| Check | Method | Success Condition | Grace Period |
-|-------|--------|-------------------|--------------|
-| Web Interface | Port listening | Port 8080 responds | 2 minutes |
+| Check | Method | Display | Grace Period | Messages |
+|-------|--------|---------|--------------|----------|
+| Web Interface | Port listening (8080) | "Web Interface" | 120 seconds | "The web interface is ready" / "The web interface is not ready" |
 
 The extended grace period accounts for Open WebUI's initialization time.
 
@@ -139,51 +145,29 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and development wo
 
 ---
 
-## Quick Reference (YAML)
+## Quick Reference for AI Consumers
 
 ```yaml
 package_id: open-webui
-containers:
-  - name: open-webui
-    image: ghcr.io/open-webui/open-webui
-
+image: ghcr.io/open-webui/open-webui
+architectures:
+  - x86_64
+  - aarch64
 volumes:
-  open-webui:
-    mountpoint: /app/backend/data
-    purpose: app data, chat history, SQLite database
-  startos:
-    purpose: store.json (WEBUI_SECRET_KEY)
-
-interfaces:
-  ui:
-    type: ui
-    port: 8080
-
-actions:
-  - reset-password: Reset Admin Password
-
+  open-webui: /app/backend/data
+  startos: host (store.json)
+ports:
+  ui: 8080
 dependencies:
-  ollama:
-    required: true
-    kind: running
-    version: ">=0.18.0"
-    health_checks:
-      - primary
-
-auto_configure:
-  - OLLAMA_BASE_URL: http://ollama.startos:11434
-  - WEBUI_SECRET_KEY: auto-generated
-  - CORS_ALLOW_ORIGIN: "*"
-  - ENABLE_VERSION_UPDATE_CHECK: false
-  - ENABLE_COMMUNITY_SHARING: false
-  - ENABLE_ADMIN_ANALYTICS: false
-  - WEBUI_SESSION_COOKIE_SECURE: true
-
-health_checks:
-  - name: Web Interface
-    method: port_listening
-    port: 8080
-    grace_period: 120000
-
-backup_volumes: [open-webui, startos]
+  - ollama
+startos_managed_env_vars:
+  - OLLAMA_BASE_URL
+  - WEBUI_SECRET_KEY
+  - CORS_ALLOW_ORIGIN
+  - ENABLE_VERSION_UPDATE_CHECK
+  - ENABLE_COMMUNITY_SHARING
+  - ENABLE_ADMIN_ANALYTICS
+  - WEBUI_SESSION_COOKIE_SECURE
+actions:
+  - reset-password
 ```

@@ -13,7 +13,7 @@ export const manifest = setupManifest({
   id: 'open-webui',
   title: 'Open WebUI',
   license: 'custom',
-  packageRepo: 'https://github.com/Start9Labs/open-webui-startos/tree/update/040',
+  packageRepo: 'https://github.com/Start9Labs/open-webui-startos',
   upstreamRepo: 'https://github.com/open-webui/open-webui/',
   marketingUrl: 'https://docs.openwebui.com/',
   donationUrl: null,
@@ -23,7 +23,7 @@ export const manifest = setupManifest({
   images: {
     'open-webui': {
       source: {
-        dockerTag: 'ghcr.io/open-webui/open-webui:0.8.10',
+        dockerTag: 'ghcr.io/open-webui/open-webui:0.8.12',
       },
       arch: ['x86_64', 'aarch64'],
     },
@@ -33,7 +33,7 @@ export const manifest = setupManifest({
       optional: false,
       description: depOllamaDescription,
       metadata: {
-        icon: 'https://raw.githubusercontent.com/Start9Labs/ollama-startos/update/040/icon.svg',
+        icon: 'https://raw.githubusercontent.com/Start9Labs/ollama-startos/master/icon.svg',
         title: 'Ollama',
       },
     },

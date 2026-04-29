@@ -2,6 +2,7 @@ import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
 import { mainMounts, uiPort } from './utils'
+import { readVllmApiKey } from './vllmCredentials'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting Open WebUI!'))
@@ -17,19 +18,29 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const enableVllm = store?.enableVllm ?? false
   const customProviders = store?.openaiProviders ?? []
 
-  // vLLM is exposed as an additional OpenAI-compatible provider when enabled.
-  // The /v1 suffix is required by vLLM's OpenAI-compatible router.
-  const vllmProvider = enableVllm
-    ? [
-        {
-          name: 'vLLM',
-          baseUrl: 'http://vllm.startos:8000/v1',
-          // vLLM by default does not require an API key, but Open WebUI
-          // expects one entry per base URL, so we send a placeholder.
-          apiKey: 'EMPTY',
-        },
-      ]
-    : []
+  // vLLM is exposed as an additional OpenAI-compatible provider when
+  // enabled. The /v1 suffix is required by vLLM's OpenAI-compatible
+  // router. The API key is read from vllm's `public` volume
+  // (credentials.json) which it publishes for dependent services.
+  let vllmProvider: { name: string; baseUrl: string; apiKey: string }[] = []
+  if (enableVllm) {
+    const apiKey = await readVllmApiKey(effects)
+    if (!apiKey) {
+      throw new Error(
+        'vLLM backend is enabled but its API key could not be read from ' +
+          'vllm:public/credentials.json. Make sure vllm is installed and ' +
+          'running, and that it is at a version that publishes the public ' +
+          'credentials volume (>= 0.16.0:0.5-beta.0 / >= #nvidia:0.20.0:0.5-beta.0).',
+      )
+    }
+    vllmProvider = [
+      {
+        name: 'vLLM',
+        baseUrl: 'http://vllm.startos:8000/v1',
+        apiKey,
+      },
+    ]
+  }
 
   const openaiProviders = [...vllmProvider, ...customProviders]
   const enableOpenAi = openaiProviders.length > 0

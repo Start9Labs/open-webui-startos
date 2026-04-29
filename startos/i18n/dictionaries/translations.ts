@@ -24,6 +24,8 @@ export default {
     19: 'La URL base de la API compatible con OpenAI, p. ej. http://vllm.startos:8000/v1 o https://api.openai.com/v1',
     20: 'Clave de API',
     21: 'Clave de API para este proveedor. Usa un valor de relleno como "none" si el backend no requiere autenticación.',
+    22: 'Habilitar backend de vLLM',
+    23: 'Cuando está habilitado, vLLM se declara como dependencia en ejecución y su endpoint compatible con OpenAI en http://vllm.startos:8000/v1 se añade a Open WebUI.',
   },
   de_DE: {
     0: 'Open WebUI wird gestartet!',
@@ -48,6 +50,8 @@ export default {
     19: 'Die OpenAI-kompatible API-Basis-URL, z. B. http://vllm.startos:8000/v1 oder https://api.openai.com/v1',
     20: 'API-Schlüssel',
     21: 'API-Schlüssel für diesen Anbieter. Verwenden Sie einen Platzhalter wie „none", wenn das Backend keine Authentifizierung benötigt.',
+    22: 'vLLM-Backend aktivieren',
+    23: 'Wenn aktiviert, wird vLLM als laufende Abhängigkeit deklariert und sein OpenAI-kompatibler Endpunkt unter http://vllm.startos:8000/v1 zu Open WebUI hinzugefügt.',
   },
   pl_PL: {
     0: 'Uruchamianie Open WebUI!',
@@ -72,6 +76,8 @@ export default {
     19: 'Bazowy adres URL API zgodnego z OpenAI, np. http://vllm.startos:8000/v1 lub https://api.openai.com/v1',
     20: 'Klucz API',
     21: 'Klucz API dla tego dostawcy. Użyj wartości zastępczej, np. „none", jeśli backend nie wymaga uwierzytelniania.',
+    22: 'Włącz backend vLLM',
+    23: 'Po włączeniu vLLM jest deklarowany jako działająca zależność, a jego punkt końcowy zgodny z OpenAI pod http://vllm.startos:8000/v1 jest dodawany do Open WebUI.',
   },
   fr_FR: {
     0: 'Démarrage d\'Open WebUI !',
@@ -96,5 +102,7 @@ export default {
     19: 'L\'URL de base de l\'API compatible OpenAI, par exemple http://vllm.startos:8000/v1 ou https://api.openai.com/v1',
     20: 'Clé d\'API',
     21: 'Clé d\'API pour ce fournisseur. Utilisez une valeur fictive comme « none » si le backend ne nécessite pas d\'authentification.',
+    22: 'Activer le backend vLLM',
+    23: 'Lorsqu\'il est activé, vLLM est déclaré comme dépendance en cours d\'exécution et son point de terminaison compatible OpenAI à http://vllm.startos:8000/v1 est ajouté à Open WebUI.',
   },
 } satisfies Record<string, LangDict>

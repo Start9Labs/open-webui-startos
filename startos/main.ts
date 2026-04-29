@@ -14,7 +14,24 @@ export const main = sdk.setupMain(async ({ effects }) => {
   }
 
   const enableOllama = store?.enableOllama ?? true
-  const openaiProviders = store?.openaiProviders ?? []
+  const enableVllm = store?.enableVllm ?? false
+  const customProviders = store?.openaiProviders ?? []
+
+  // vLLM is exposed as an additional OpenAI-compatible provider when enabled.
+  // The /v1 suffix is required by vLLM's OpenAI-compatible router.
+  const vllmProvider = enableVllm
+    ? [
+        {
+          name: 'vLLM',
+          baseUrl: 'http://vllm.startos:8000/v1',
+          // vLLM by default does not require an API key, but Open WebUI
+          // expects one entry per base URL, so we send a placeholder.
+          apiKey: 'EMPTY',
+        },
+      ]
+    : []
+
+  const openaiProviders = [...vllmProvider, ...customProviders]
   const enableOpenAi = openaiProviders.length > 0
 
   const env: Record<string, string> = {

@@ -23,6 +23,8 @@ const dict = {
   'The OpenAI-compatible API base URL, e.g. http://vllm.startos:8000/v1 or https://api.openai.com/v1': 19,
   'API Key': 20,
   'API key for this provider. Use a placeholder like "none" if the backend does not require authentication.': 21,
+  'Enable vLLM Backend': 22,
+  'When enabled, vLLM is declared as a running dependency and its OpenAI-compatible endpoint at http://vllm.startos:8000/v1 is added to Open WebUI.': 23,
 } as const
 
 export type I18nKey = keyof typeof dict

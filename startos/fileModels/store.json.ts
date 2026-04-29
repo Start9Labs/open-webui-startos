@@ -10,6 +10,7 @@ const openaiProviderShape = z.object({
 const shape = z.object({
   WEBUI_SECRET_KEY: z.string(),
   enableOllama: z.boolean().default(true),
+  enableVllm: z.boolean().default(false),
   openaiProviders: z.array(openaiProviderShape).default([]),
 })
 

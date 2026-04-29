@@ -48,6 +48,13 @@ const inputSpec = InputSpec.of({
     ),
     default: true,
   }),
+  enableVllm: Value.toggle({
+    name: i18n('Enable vLLM Backend'),
+    description: i18n(
+      'When enabled, vLLM is declared as a running dependency and its OpenAI-compatible endpoint at http://vllm.startos:8000/v1 is added to Open WebUI.',
+    ),
+    default: false,
+  }),
   openaiProviders: Value.list(
     List.obj(
       {
@@ -86,6 +93,7 @@ export const configureBackends = sdk.Action.withInput(
     const store = await storeJson.read().once()
     return {
       enableOllama: store?.enableOllama ?? true,
+      enableVllm: store?.enableVllm ?? false,
       openaiProviders: store?.openaiProviders ?? [],
     }
   },
@@ -93,6 +101,7 @@ export const configureBackends = sdk.Action.withInput(
   async ({ effects, input }) => {
     await storeJson.merge(effects, {
       enableOllama: input.enableOllama,
+      enableVllm: input.enableVllm,
       openaiProviders: input.openaiProviders,
     })
   },

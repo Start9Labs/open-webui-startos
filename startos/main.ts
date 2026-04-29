@@ -2,7 +2,7 @@ import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
 import { mainMounts, uiPort } from './utils'
-import { readVllmApiKey } from './vllmCredentials'
+import { ensureVllmPublicMounted, vllmCredentialsFile } from './vllmCredentials'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting Open WebUI!'))
@@ -20,11 +20,16 @@ export const main = sdk.setupMain(async ({ effects }) => {
 
   // vLLM is exposed as an additional OpenAI-compatible provider when
   // enabled. The /v1 suffix is required by vLLM's OpenAI-compatible
-  // router. The API key is read from vllm's `public` volume
-  // (credentials.json) which it publishes for dependent services.
+  // router. The API key is read reactively from vllm's `public` volume
+  // (credentials.json) which it publishes for dependent services —
+  // .const(effects) registers the apiKey as a dependency of setupMain,
+  // so a vllm-side rotation triggers a daemon restart with the new key.
   let vllmProvider: { name: string; baseUrl: string; apiKey: string }[] = []
   if (enableVllm) {
-    const apiKey = await readVllmApiKey(effects)
+    await ensureVllmPublicMounted(effects)
+    const apiKey = await vllmCredentialsFile
+      .read((c) => c.apiKey)
+      .const(effects)
     if (!apiKey) {
       throw new Error(
         'vLLM backend is enabled but its API key could not be read from ' +

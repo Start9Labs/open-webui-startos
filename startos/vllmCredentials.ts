@@ -1,56 +1,53 @@
-import { T } from '@start9labs/start-sdk'
+import * as fs from 'node:fs/promises'
+import { FileHelper, T, z } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
 
 /**
- * Minimal manifest type for vllm-startos. We don't import the upstream
- * package as a dependency just for types — only the fields needed by
- * `mountDependency` (`id` + `volumes`) need to line up.
+ * Where on the host we bind-mount vllm-startos's `public` volume so that
+ * we can reactively watch its `credentials.json`. Lives under our own
+ * `startos` SDK volume so it persists with the package and we don't
+ * pollute the host filesystem.
  */
-type VllmManifest = T.SDKManifest & {
-  id: 'vllm'
-  volumes: 'public'[]
-}
+const VLLM_PUBLIC_MOUNT = sdk.volumes.startos.subpath('vllm-public')
+const CREDENTIALS_PATH = `${VLLM_PUBLIC_MOUNT}/credentials.json`
+
+const credentialsShape = z.object({
+  apiKey: z.string(),
+})
 
 /**
- * Read the API key vllm-startos publishes on its `public` volume in
- * `credentials.json`. Returns null if the file is missing or malformed
- * (e.g. dependency not yet running, or running an old vllm version that
- * predates the public-credentials pattern).
+ * Reactive view of vllm-startos's published API key.
+ *
+ * vllm-startos writes `{ apiKey }` to its `public` volume's
+ * `credentials.json` and keeps it in sync via a reactive init script
+ * (see vllm's `init/syncCredentials.ts`). We bind-mount that volume
+ * read-only at a stable host path and expose it as a FileHelper so
+ * setupMain can `.const()` on the key — when vllm rotates it, our
+ * setupMain re-runs and the daemon restarts with the new key.
  */
-export async function readVllmApiKey(
-  effects: T.Effects,
-): Promise<string | null> {
-  const mounts = sdk.Mounts.of().mountDependency<VllmManifest>({
-    dependencyId: 'vllm',
-    volumeId: 'public',
-    subpath: null,
-    mountpoint: '/vllm-public',
-    readonly: true,
-  })
+export const vllmCredentialsFile = FileHelper.json(
+  CREDENTIALS_PATH,
+  credentialsShape,
+)
 
-  try {
-    return await sdk.SubContainer.withTemp(
-      effects,
-      { imageId: 'open-webui' },
-      mounts,
-      'read-vllm-creds',
-      async (sub) => {
-        const { stdout } = await sub.execFail([
-          'cat',
-          '/vllm-public/credentials.json',
-        ])
-        const text =
-          typeof stdout === 'string' ? stdout : stdout.toString('utf8')
-        const parsed = JSON.parse(text)
-        return typeof parsed?.apiKey === 'string' ? parsed.apiKey : null
-      },
-    )
-  } catch (e) {
-    console.warn(
-      `[open-webui] could not read vllm credentials.json: ${
-        e instanceof Error ? e.message : String(e)
-      }`,
-    )
-    return null
-  }
+/**
+ * Idempotently bind-mount vllm:public read-only at the host path that
+ * `vllmCredentialsFile` reads from. Safe to call on every setupMain
+ * run — if the mount is already in place, the underlying StartOS mount
+ * call is a no-op.
+ */
+export async function ensureVllmPublicMounted(
+  effects: T.Effects,
+): Promise<void> {
+  await fs.mkdir(VLLM_PUBLIC_MOUNT, { recursive: true })
+  await effects.mount({
+    location: VLLM_PUBLIC_MOUNT,
+    target: {
+      packageId: 'vllm',
+      volumeId: 'public',
+      subpath: null,
+      readonly: true,
+      idmap: [],
+    },
+  })
 }

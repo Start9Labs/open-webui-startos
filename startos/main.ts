@@ -6,11 +6,39 @@ import { mainMounts, uiPort } from './utils'
 export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting Open WebUI!'))
 
-  const WEBUI_SECRET_KEY = await storeJson
-    .read((s) => s.WEBUI_SECRET_KEY)
-    .once()
+  const store = await storeJson.read().const(effects)
+
+  const WEBUI_SECRET_KEY = store?.WEBUI_SECRET_KEY
   if (!WEBUI_SECRET_KEY) {
     throw new Error('store.json WEBUI_SECRET_KEY not found')
+  }
+
+  const enableOllama = store?.enableOllama ?? true
+  const openaiProviders = store?.openaiProviders ?? []
+  const enableOpenAi = openaiProviders.length > 0
+
+  const env: Record<string, string> = {
+    WEBUI_SECRET_KEY,
+    CORS_ALLOW_ORIGIN: '*',
+    ENABLE_VERSION_UPDATE_CHECK: 'false',
+    ENABLE_COMMUNITY_SHARING: 'false',
+    ENABLE_ADMIN_ANALYTICS: 'false',
+    WEBUI_SESSION_COOKIE_SECURE: 'true',
+    ENABLE_OLLAMA_API: enableOllama ? 'true' : 'false',
+    ENABLE_OPENAI_API: enableOpenAi ? 'true' : 'false',
+  }
+
+  if (enableOllama) {
+    env.OLLAMA_BASE_URL = 'http://ollama.startos:11434'
+  }
+
+  if (enableOpenAi) {
+    // Open WebUI accepts semicolon-separated lists of base URLs and matching
+    // API keys. The Nth URL is paired with the Nth key.
+    env.OPENAI_API_BASE_URLS = openaiProviders
+      .map((p) => p.baseUrl)
+      .join(';')
+    env.OPENAI_API_KEYS = openaiProviders.map((p) => p.apiKey).join(';')
   }
 
   return sdk.Daemons.of(effects).addDaemon('primary', {
@@ -22,15 +50,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     ),
     exec: {
       command: sdk.useEntrypoint(),
-      env: {
-        OLLAMA_BASE_URL: 'http://ollama.startos:11434',
-        WEBUI_SECRET_KEY,
-        CORS_ALLOW_ORIGIN: '*',
-        ENABLE_VERSION_UPDATE_CHECK: 'false',
-        ENABLE_COMMUNITY_SHARING: 'false',
-        ENABLE_ADMIN_ANALYTICS: 'false',
-        WEBUI_SESSION_COOKIE_SECURE: 'true',
-      },
+      env,
     },
     ready: {
       display: i18n('Web Interface'),

@@ -71,7 +71,11 @@ export const main = sdk.setupMain(async ({ effects }) => {
     env.OPENAI_API_BASE_URLS = openaiProviders
       .map((p) => p.baseUrl)
       .join(';')
-    env.OPENAI_API_KEYS = openaiProviders.map((p) => p.apiKey).join(';')
+    // null/empty apiKey is sent as an empty entry; Open WebUI tolerates
+    // unauthenticated providers when the matching key slot is blank.
+    env.OPENAI_API_KEYS = openaiProviders
+      .map((p) => p.apiKey ?? '')
+      .join(';')
   }
 
   return sdk.Daemons.of(effects).addDaemon('primary', {

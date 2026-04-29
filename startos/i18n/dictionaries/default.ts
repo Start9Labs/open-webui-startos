@@ -14,7 +14,7 @@ const dict = {
   'Configure Backends': 10,
   'Choose which LLM backends Open WebUI connects to: Ollama and/or any OpenAI-compatible providers (vLLM, OpenAI, etc.)': 11,
   'Enable Ollama Backend': 12,
-  'When enabled, Ollama is declared as a running dependency and Open WebUI is wired to http://ollama.startos:11434.': 13,
+  'Add Ollama as a dependency and connect Open WebUI to it.': 13,
   'OpenAI-Compatible Providers': 14,
   'Add any number of OpenAI-compatible API endpoints (vLLM, llama.cpp server, OpenAI cloud, OpenRouter, etc.). Each entry contributes one base URL and matching API key to Open WebUI.': 15,
   'Display Name': 16,
@@ -22,9 +22,9 @@ const dict = {
   'Base URL': 18,
   'The OpenAI-compatible API base URL, e.g. http://vllm.startos:8000/v1 or https://api.openai.com/v1': 19,
   'API Key': 20,
-  'API key for this provider. Use a placeholder like "none" if the backend does not require authentication.': 21,
+  'API key for this provider. Leave blank if the backend does not require authentication.': 21,
   'Enable vLLM Backend': 22,
-  'When enabled, vLLM is declared as a running dependency and its OpenAI-compatible endpoint at http://vllm.startos:8000/v1 is added to Open WebUI.': 23,
+  'Add vLLM as a dependency and connect Open WebUI to it.': 23,
 } as const
 
 export type I18nKey = keyof typeof dict

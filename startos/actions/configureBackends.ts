@@ -32,9 +32,9 @@ const providerSpec = InputSpec.of({
   apiKey: Value.text({
     name: i18n('API Key'),
     description: i18n(
-      'API key for this provider. Use a placeholder like "none" if the backend does not require authentication.',
+      'API key for this provider. Leave blank if the backend does not require authentication.',
     ),
-    required: true,
+    required: false,
     default: null,
     masked: true,
   }),
@@ -44,14 +44,14 @@ const inputSpec = InputSpec.of({
   enableOllama: Value.toggle({
     name: i18n('Enable Ollama Backend'),
     description: i18n(
-      'When enabled, Ollama is declared as a running dependency and Open WebUI is wired to http://ollama.startos:11434.',
+      'Add Ollama as a dependency and connect Open WebUI to it.',
     ),
     default: true,
   }),
   enableVllm: Value.toggle({
     name: i18n('Enable vLLM Backend'),
     description: i18n(
-      'When enabled, vLLM is declared as a running dependency and its OpenAI-compatible endpoint at http://vllm.startos:8000/v1 is added to Open WebUI.',
+      'Add vLLM as a dependency and connect Open WebUI to it.',
     ),
     default: false,
   }),

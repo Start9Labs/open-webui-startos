@@ -4,7 +4,7 @@ import { sdk } from '../sdk'
 const openaiProviderShape = z.object({
   name: z.string(),
   baseUrl: z.string(),
-  apiKey: z.string(),
+  apiKey: z.string().nullable(),
 })
 
 const shape = z.object({

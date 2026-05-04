@@ -35,7 +35,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
         'vLLM backend is enabled but its API key could not be read from ' +
           'vllm:public/credentials.json. Make sure vllm is installed and ' +
           'running, and that it is at a version that publishes the public ' +
-          'credentials volume (>= 0.16.0:0.5-beta.0).',
+          'credentials volume (>= 0.16.0:0.1).',
       )
     }
     vllmProvider = [

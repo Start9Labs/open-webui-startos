@@ -20,12 +20,12 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
   }
 
   if (enableVllm) {
-    // 0.16.0:0.5-beta.0 is the first vllm release that publishes the API
-    // key on a `public` volume for dependents to read. Earlier versions
+    // 0.16.0:0.1 is the first vllm release that publishes the API key
+    // on a `public` volume for dependents to read. Earlier versions
     // kept it private to the main volume.
     deps.vllm = {
       kind: 'running',
-      versionRange: '>=0.16.0:0.5-beta.0',
+      versionRange: '>=0.16.0:0.1',
       healthChecks: ['primary'],
     }
   }

@@ -1,19 +1,15 @@
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { storeJson } from '../fileModels/store.json'
+import { setDependencies } from '../dependencies'
+import {
+  ensureVllmPublicMounted,
+  vllmCredentialsFile,
+} from '../vllmCredentials'
+import { OLLAMA_BASE_URL, VLLM_BASE_URL, webuiConfig } from '../webuiConfig'
 
 const { InputSpec, Value, List } = sdk
 
 const providerSpec = InputSpec.of({
-  name: Value.text({
-    name: i18n('Display Name'),
-    description: i18n(
-      'A friendly name for this provider (shown in the Open WebUI model picker)',
-    ),
-    required: true,
-    default: null,
-    placeholder: 'vLLM',
-  }),
   baseUrl: Value.text({
     name: i18n('Base URL'),
     description: i18n(
@@ -21,7 +17,7 @@ const providerSpec = InputSpec.of({
     ),
     required: true,
     default: null,
-    placeholder: 'http://vllm.startos:8000/v1',
+    placeholder: 'https://api.openai.com/v1',
     patterns: [
       {
         regex: '^https?://.+',
@@ -55,7 +51,7 @@ const inputSpec = InputSpec.of({
     ),
     default: false,
   }),
-  openaiProviders: Value.list(
+  customProviders: Value.list(
     List.obj(
       {
         name: i18n('OpenAI-Compatible Providers'),
@@ -66,8 +62,8 @@ const inputSpec = InputSpec.of({
       },
       {
         spec: providerSpec,
-        displayAs: '{{name}}',
-        uniqueBy: 'name',
+        displayAs: '{{baseUrl}}',
+        uniqueBy: 'baseUrl',
       },
     ),
   ),
@@ -90,19 +86,63 @@ export const configureBackends = sdk.Action.withInput(
   inputSpec,
 
   async ({ effects }) => {
-    const store = await storeJson.read().once()
+    const view = await webuiConfig.read(effects).once()
     return {
-      enableOllama: store?.enableOllama ?? true,
-      enableVllm: store?.enableVllm ?? false,
-      openaiProviders: store?.openaiProviders ?? [],
+      enableOllama: view.enableOllama,
+      enableVllm: view.enableVllm,
+      customProviders: view.customProviders.map((p) => ({
+        baseUrl: p.baseUrl,
+        apiKey: p.apiKey || null,
+      })),
     }
   },
 
   async ({ effects, input }) => {
-    await storeJson.merge(effects, {
-      enableOllama: input.enableOllama,
-      enableVllm: input.enableVllm,
-      openaiProviders: input.openaiProviders,
+    let vllmApiKey: string | null = null
+    if (input.enableVllm) {
+      await ensureVllmPublicMounted(effects)
+      const cred = await vllmCredentialsFile.read((c) => c.apiKey).once()
+      if (!cred) {
+        throw new Error(
+          'vLLM is enabled but its API key could not be read from ' +
+            'vllm:public/credentials.json. Make sure vllm is installed and ' +
+            'running, and that it is at a version that publishes the public ' +
+            'credentials volume (>= 0.16.0:0.1).',
+        )
+      }
+      vllmApiKey = cred
+    }
+
+    // Compose the openai lists. The managed vllm slot is always first
+    // (when enabled); the rest is whatever the user listed under custom
+    // providers. Filter out duplicates of VLLM_BASE_URL so toggling vLLM
+    // off via the toggle plus leaving it in the custom list doesn't
+    // accidentally re-enable it.
+    const baseUrls: string[] = []
+    const apiKeys: string[] = []
+    if (input.enableVllm) {
+      baseUrls.push(VLLM_BASE_URL)
+      apiKeys.push(vllmApiKey ?? '')
+    }
+    for (const p of input.customProviders) {
+      if (p.baseUrl === VLLM_BASE_URL) continue
+      baseUrls.push(p.baseUrl)
+      apiKeys.push(p.apiKey ?? '')
+    }
+
+    await webuiConfig.merge(effects, {
+      ollama: {
+        enable: input.enableOllama,
+        base_urls: input.enableOllama ? [OLLAMA_BASE_URL] : [],
+      },
+      openai: {
+        enable: baseUrls.length > 0,
+        api_base_urls: baseUrls,
+        api_keys: apiKeys,
+      },
     })
+
+    await setDependencies(effects)
+    await effects.restart()
   },
 )

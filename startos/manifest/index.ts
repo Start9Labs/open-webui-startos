@@ -9,6 +9,19 @@ const depOllamaDescription = {
   fr_FR: "Peut être utilisé pour héberger des LLM locaux",
 }
 
+const depSearxngDescription = {
+  en_US:
+    'Privacy-respecting metasearch engine. Install to give Open WebUI a self-hosted web-search backend; enable web search in the Open WebUI admin panel after installing.',
+  es_ES:
+    'Motor de metabúsqueda respetuoso con la privacidad. Instálalo para proporcionar a Open WebUI un backend de búsqueda web autoalojado; habilita la búsqueda web en el panel de administración de Open WebUI tras instalarlo.',
+  de_DE:
+    'Datenschutzfreundliche Metasuchmaschine. Installieren, um Open WebUI ein selbst gehostetes Web-Such-Backend bereitzustellen; aktiviere die Websuche anschließend im Admin-Panel von Open WebUI.',
+  pl_PL:
+    'Wyszukiwarka meta szanująca prywatność. Zainstaluj, aby udostępnić Open WebUI samodzielnie hostowany backend wyszukiwania w sieci; włącz wyszukiwanie w panelu administracyjnym Open WebUI po instalacji.',
+  fr_FR:
+    "Métamoteur de recherche respectueux de la vie privée. Installez-le pour fournir à Open WebUI un backend de recherche web auto-hébergé ; activez la recherche web dans le panneau d'administration d'Open WebUI après l'installation.",
+}
+
 export const manifest = setupManifest({
   id: 'open-webui',
   title: 'Open WebUI',
@@ -23,7 +36,7 @@ export const manifest = setupManifest({
   images: {
     'open-webui': {
       source: {
-        dockerTag: 'ghcr.io/open-webui/open-webui:0.8.12',
+        dockerTag: 'ghcr.io/open-webui/open-webui:0.9.2',
       },
       arch: ['x86_64', 'aarch64'],
     },
@@ -35,6 +48,14 @@ export const manifest = setupManifest({
       metadata: {
         icon: 'https://raw.githubusercontent.com/Start9Labs/ollama-startos/master/icon.svg',
         title: 'Ollama',
+      },
+    },
+    searxng: {
+      optional: true,
+      description: depSearxngDescription,
+      metadata: {
+        icon: 'https://raw.githubusercontent.com/Start9Labs/searxng-startos/master/icon.svg',
+        title: 'SearXNG',
       },
     },
   },

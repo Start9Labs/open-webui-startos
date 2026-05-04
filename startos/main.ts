@@ -30,6 +30,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
         ENABLE_COMMUNITY_SHARING: 'false',
         ENABLE_ADMIN_ANALYTICS: 'false',
         WEBUI_SESSION_COOKIE_SECURE: 'true',
+        WEB_SEARCH_ENGINE: 'searxng',
+        SEARXNG_QUERY_URL:
+          'http://searxng.startos:80/search?q=<query>&format=json',
       },
     },
     ready: {

@@ -1,7 +1,7 @@
-import { VersionInfo } from '@start9labs/start-sdk'
+import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
-export const v_0_8_12_2 = VersionInfo.of({
-  version: '0.8.12:2',
+export const v_0_9_2_2 = VersionInfo.of({
+  version: '0.9.2:2',
   releaseNotes: {
     en_US:
       'Add support for vLLM and other OpenAI-compatible backends (llama.cpp, OpenAI cloud, OpenRouter, etc.) alongside Ollama. Both Ollama and vLLM are now optional dependencies and can be toggled on/off via the new "Configure Backends" action.',
@@ -16,6 +16,6 @@ export const v_0_8_12_2 = VersionInfo.of({
   },
   migrations: {
     up: async ({ effects }) => {},
-    down: async ({ effects }) => {},
+    down: IMPOSSIBLE,
   },
 })

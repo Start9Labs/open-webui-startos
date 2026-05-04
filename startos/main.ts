@@ -59,6 +59,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
     WEBUI_SESSION_COOKIE_SECURE: 'true',
     ENABLE_OLLAMA_API: enableOllama ? 'true' : 'false',
     ENABLE_OPENAI_API: enableOpenAi ? 'true' : 'false',
+    WEB_SEARCH_ENGINE: 'searxng',
+    SEARXNG_QUERY_URL:
+      'http://searxng.startos:80/search?q=<query>&format=json',
   }
 
   if (enableOllama) {

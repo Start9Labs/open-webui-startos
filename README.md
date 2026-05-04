@@ -67,6 +67,19 @@ On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.
 | `ENABLE_COMMUNITY_SHARING` | `false` | Disable community sharing |
 | `ENABLE_ADMIN_ANALYTICS` | `false` | Disable analytics |
 | `WEBUI_SESSION_COOKIE_SECURE` | `true` | Secure session cookies |
+| `WEB_SEARCH_ENGINE` | `searxng` | Default web-search backend (only used if web search is turned on) |
+| `SEARXNG_QUERY_URL` | `http://searxng.startos:80/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled |
+
+> Open WebUI treats most of these as `PersistentConfig` values: they're read from the env on first install and saved to the internal database. Subsequent edits via the Open WebUI admin panel override the defaults — changing them via env requires a fresh install or clearing the corresponding DB rows.
+
+### Enabling Web Search (SearXNG)
+
+Web search is **off by default**. To turn it on:
+
+1. Install the optional [SearXNG](https://github.com/Start9Labs/searxng-startos) package on the same StartOS server.
+2. In Open WebUI, go to **Admin Panel → Settings → Web Search** and toggle web search on. The engine (`searxng`) and query URL are pre-filled.
+
+The pre-filled URL hits SearXNG's JSON API directly via the StartOS internal network. No public exposure is required.
 
 ### User-Configurable Settings
 

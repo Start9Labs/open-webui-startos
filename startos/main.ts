@@ -57,6 +57,12 @@ export const main = sdk.setupMain(async ({ effects }) => {
     ENABLE_COMMUNITY_SHARING: 'false',
     ENABLE_ADMIN_ANALYTICS: 'false',
     WEBUI_SESSION_COOKIE_SECURE: 'true',
+    // The Configure Backends action is the source of truth for backend
+    // wiring (Ollama URL, OpenAI-compatible providers, enable flags).
+    // Open WebUI's PersistentConfig otherwise loads these from its own
+    // DB after first launch and silently ignores env changes — toggling
+    // a backend here would never reach the dashboard.
+    ENABLE_PERSISTENT_CONFIG: 'false',
     ENABLE_OLLAMA_API: enableOllama ? 'true' : 'false',
     ENABLE_OPENAI_API: enableOpenAi ? 'true' : 'false',
     WEB_SEARCH_ENGINE: 'searxng',

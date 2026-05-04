@@ -2,7 +2,7 @@ import { storeJson } from './fileModels/store.json'
 import { sdk } from './sdk'
 
 export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
-  const store = await storeJson.read().once()
+  const store = await storeJson.read().const(effects)
   const enableOllama = store?.enableOllama ?? true
   const enableVllm = store?.enableVllm ?? false
 

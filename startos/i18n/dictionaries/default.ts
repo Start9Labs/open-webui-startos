@@ -11,6 +11,20 @@ const dict = {
   'Reset the admin user password in case you forget it': 7,
   'Success': 8,
   'The new admin password is below': 9,
+  'Configure Backends': 10,
+  'Choose which LLM backends Open WebUI connects to: Ollama and/or any OpenAI-compatible providers (vLLM, OpenAI, etc.)': 11,
+  'Enable Ollama Backend': 12,
+  'Add Ollama as a dependency and connect Open WebUI to it.': 13,
+  'OpenAI-Compatible Providers': 14,
+  'Add any number of OpenAI-compatible API endpoints (vLLM, llama.cpp server, OpenAI cloud, OpenRouter, etc.). Each entry contributes one base URL and matching API key to Open WebUI.': 15,
+  'Display Name': 16,
+  'A friendly name for this provider (shown in the Open WebUI model picker)': 17,
+  'Base URL': 18,
+  'The OpenAI-compatible API base URL, e.g. http://vllm.startos:8000/v1 or https://api.openai.com/v1': 19,
+  'API Key': 20,
+  'API key for this provider. Leave blank if the backend does not require authentication.': 21,
+  'Enable vLLM Backend': 22,
+  'Add vLLM as a dependency and connect Open WebUI to it.': 23,
 } as const
 
 export type I18nKey = keyof typeof dict

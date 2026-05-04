@@ -2,11 +2,19 @@ import { setupManifest } from '@start9labs/start-sdk'
 import i18n from './i18n'
 
 const depOllamaDescription = {
-  en_US: 'Can be used for hosting local LLMs',
-  es_ES: 'Se puede usar para alojar LLMs locales',
-  de_DE: 'Kann zum Hosten lokaler LLMs verwendet werden',
-  pl_PL: 'Może być używany do hostowania lokalnych LLM',
-  fr_FR: "Peut être utilisé pour héberger des LLM locaux",
+  en_US: 'Optional: host local LLMs with Ollama. Toggle on/off via the Configure Backends action.',
+  es_ES: 'Opcional: aloja LLMs locales con Ollama. Actívalo/desactívalo mediante la acción Configurar Backends.',
+  de_DE: 'Optional: lokale LLMs mit Ollama hosten. Über die Aktion „Backends konfigurieren“ aktivieren/deaktivieren.',
+  pl_PL: 'Opcjonalnie: hostuj lokalne LLM za pomocą Ollama. Włącz/wyłącz w akcji Konfiguruj backendy.',
+  fr_FR: "Optionnel : hébergez des LLM locaux avec Ollama. Activez/désactivez via l'action Configurer les backends.",
+}
+
+const depVllmDescription = {
+  en_US: 'Optional: serve local LLMs through vLLM\'s OpenAI-compatible API. Toggle on/off via the Configure Backends action.',
+  es_ES: 'Opcional: sirve LLMs locales a través de la API compatible con OpenAI de vLLM. Actívalo/desactívalo mediante la acción Configurar Backends.',
+  de_DE: 'Optional: lokale LLMs über die OpenAI-kompatible API von vLLM bereitstellen. Über die Aktion „Backends konfigurieren“ aktivieren/deaktivieren.',
+  pl_PL: 'Opcjonalnie: serwuj lokalne LLM przez API zgodne z OpenAI z vLLM. Włącz/wyłącz w akcji Konfiguruj backendy.',
+  fr_FR: "Optionnel : servez des LLM locaux via l'API compatible OpenAI de vLLM. Activez/désactivez via l'action Configurer les backends.",
 }
 
 const depSearxngDescription = {
@@ -43,11 +51,19 @@ export const manifest = setupManifest({
   },
   dependencies: {
     ollama: {
-      optional: false,
+      optional: true,
       description: depOllamaDescription,
       metadata: {
         icon: 'https://raw.githubusercontent.com/Start9Labs/ollama-startos/master/icon.svg',
         title: 'Ollama',
+      },
+    },
+    vllm: {
+      optional: true,
+      description: depVllmDescription,
+      metadata: {
+        icon: 'https://raw.githubusercontent.com/Start9Labs/vllm-startos/master/icon.svg',
+        title: 'vLLM',
       },
     },
     searxng: {

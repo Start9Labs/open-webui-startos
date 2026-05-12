@@ -82,11 +82,16 @@ export const main = sdk.setupMain(async ({ effects }) => {
     ready: {
       display: i18n('Web Interface'),
       gracePeriod: 120000,
+      // uvicorn binds the socket before the FastAPI app finishes lifespan startup; /health flips only when the app is actually serving.
       fn: () =>
-        sdk.healthCheck.checkPortListening(effects, uiPort, {
-          successMessage: i18n('The web interface is ready'),
-          errorMessage: i18n('The web interface is not ready'),
-        }),
+        sdk.healthCheck.checkWebUrl(
+          effects,
+          `http://localhost:${uiPort}/health`,
+          {
+            successMessage: i18n('The web interface is ready'),
+            errorMessage: i18n('The web interface is not ready'),
+          },
+        ),
     },
     requires: [],
   })

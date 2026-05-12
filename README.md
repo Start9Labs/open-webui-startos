@@ -130,7 +130,7 @@ Ollama must be installed and running. Open WebUI automatically connects to it at
 
 | Check | Method | Display | Grace Period | Messages |
 |-------|--------|---------|--------------|----------|
-| Web Interface | Port listening (8080) | "Web Interface" | 120 seconds | "The web interface is ready" / "The web interface is not ready" |
+| Web Interface | HTTP `GET /health` on port 8080 | "Web Interface" | 120 seconds | "The web interface is ready" / "The web interface is not ready" |
 
 The extended grace period accounts for Open WebUI's initialization time.
 

@@ -38,13 +38,12 @@ export const manifest = setupManifest({
   upstreamRepo: 'https://github.com/open-webui/open-webui/',
   marketingUrl: 'https://docs.openwebui.com/',
   donationUrl: null,
-  docsUrls: ['https://docs.openwebui.com/'],
   description: i18n.description,
   volumes: ['open-webui', 'startos'],
   images: {
     'open-webui': {
       source: {
-        dockerTag: 'ghcr.io/open-webui/open-webui:0.9.2',
+        dockerTag: 'ghcr.io/open-webui/open-webui:0.9.5',
       },
       arch: ['x86_64', 'aarch64'],
     },

@@ -18,7 +18,7 @@ Open WebUI ships as a single prebuilt image from GHCR. There is one upstream pin
   curl -fsSL "https://hub.docker.com/v2/repositories/openwebui/open-webui/tags?page_size=20&ordering=last_updated" | jq -r '.results[].name'
   ```
 
-  Pin lives in `startos/manifest/index.ts` at `images['open-webui'].source.dockerTag` (currently `ghcr.io/open-webui/open-webui:0.9.5`).
+  Pin lives in `startos/manifest/index.ts` at `images['open-webui'].source.dockerTag` (currently `ghcr.io/open-webui/open-webui:0.9.6`).
 
 ## Applying the bump
 

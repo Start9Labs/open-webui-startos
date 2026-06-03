@@ -1,6 +1,7 @@
 import * as fs from 'node:fs/promises'
 import { T, utils } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
+import { KNOWN_BASE_URLS, KNOWN_OPENAI, OLLAMA_BASE_URL } from './backends'
 import { mainMounts, webuiDb } from './utils'
 
 /**
@@ -21,23 +22,25 @@ import { mainMounts, webuiDb } from './utils'
  * client stack matches the daemon's (same sqlite3 library, same WAL).
  */
 
-export const VLLM_BASE_URL = 'http://vllm.startos:8000/v1'
-export const OLLAMA_BASE_URL = 'http://ollama.startos:11434'
-
 export type CustomProvider = { baseUrl: string; apiKey: string }
 
 export type BackendsView = {
-  enableOllama: boolean
-  enableVllm: boolean
-  vllmApiKey: string | null
+  /**
+   * Known on-instance backends currently wired into the config (matched by
+   * base URL), regardless of whether they're still installed.
+   */
+  connectedIds: string[]
+  /**
+   * OpenAI entries that don't correspond to a known on-instance backend —
+   * i.e. external / manually-added providers.
+   */
   customProviders: CustomProvider[]
-}
-
-export const DEFAULT_VIEW: BackendsView = {
-  enableOllama: true,
-  enableVllm: false,
-  vllmApiKey: null,
-  customProviders: [],
+  /**
+   * Raw `openai` arrays, exposed so setupMain can patch a single key slot in
+   * place when a public-credential backend (e.g. vLLM) rotates its key.
+   */
+  openaiBaseUrls: string[]
+  openaiApiKeys: string[]
 }
 
 const dbHostPath = (): string => sdk.volumes['open-webui'].subpath('webui.db')
@@ -71,6 +74,18 @@ try:
     else:
         c.execute('INSERT INTO config (data, version) VALUES (?, 0)', (data,))
     conn.commit()
+finally:
+    conn.close()
+`
+
+const ADMIN_CHECK_SCRIPT = `import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+c = conn.cursor()
+try:
+    c.execute("SELECT 1 FROM user WHERE role = 'admin' LIMIT 1")
+    sys.stdout.write('admin' if c.fetchone() else 'none')
+except sqlite3.OperationalError:
+    sys.stdout.write('none')
 finally:
     conn.close()
 `
@@ -114,6 +129,30 @@ async function writeRaw(
   )
 }
 
+/**
+ * True once Open WebUI has been initialized and a first admin account exists.
+ * The daemon creates webui.db and its schema on first launch, and the first
+ * registered user becomes the admin. Config writes are gated on this: writing
+ * to the `config` table before the schema and admin exist corrupts onboarding
+ * (issue #15). File-existence is checked first so this never creates an empty
+ * webui.db itself, and a missing `user` table is treated as "no admin yet".
+ */
+export async function adminExists(effects: T.Effects): Promise<boolean> {
+  if (!(await exists(dbHostPath()))) return false
+  const out = await sdk.SubContainer.withTemp(
+    effects,
+    { imageId: 'open-webui' },
+    mainMounts,
+    'webui-admin-check',
+    (subc) => subc.execFail(['python3', '-c', ADMIN_CHECK_SCRIPT, webuiDb]),
+  )
+  const stdout =
+    typeof out.stdout === 'string'
+      ? out.stdout
+      : Buffer.from(out.stdout).toString('utf-8')
+  return stdout.trim() === 'admin'
+}
+
 function isPlainObject(x: unknown): x is Record<string, any> {
   return typeof x === 'object' && x !== null && !Array.isArray(x)
 }
@@ -133,30 +172,34 @@ function deepMerge(
   return out
 }
 
+function strArr(x: unknown): string[] {
+  return Array.isArray(x)
+    ? x.filter((s): s is string => typeof s === 'string')
+    : []
+}
+
 function deriveView(raw: Record<string, any>): BackendsView {
   const ollama = isPlainObject(raw.ollama) ? raw.ollama : {}
   const openai = isPlainObject(raw.openai) ? raw.openai : {}
-  const baseUrls: string[] = Array.isArray(openai.api_base_urls)
-    ? openai.api_base_urls.filter((u: unknown): u is string => typeof u === 'string')
-    : []
-  const apiKeys: string[] = Array.isArray(openai.api_keys)
+  const ollamaUrls = strArr(ollama.base_urls)
+  const openaiBaseUrls = strArr(openai.api_base_urls)
+  const openaiApiKeys: string[] = Array.isArray(openai.api_keys)
     ? openai.api_keys.map((k: unknown) => (typeof k === 'string' ? k : ''))
     : []
 
-  const vllmIdx = baseUrls.indexOf(VLLM_BASE_URL)
-  const enableVllm = vllmIdx >= 0
-  const vllmApiKey = enableVllm ? apiKeys[vllmIdx] ?? null : null
-
-  const customProviders: CustomProvider[] = baseUrls
-    .map((baseUrl, i) => ({ baseUrl, apiKey: apiKeys[i] ?? '' }))
-    .filter((p) => p.baseUrl !== VLLM_BASE_URL)
-
-  return {
-    enableOllama: ollama.enable ?? DEFAULT_VIEW.enableOllama,
-    enableVllm,
-    vllmApiKey,
-    customProviders,
+  const connectedIds: string[] = []
+  if ((ollama.enable ?? true) && ollamaUrls.includes(OLLAMA_BASE_URL)) {
+    connectedIds.push('ollama')
   }
+  for (const b of KNOWN_OPENAI) {
+    if (openaiBaseUrls.includes(b.baseUrl)) connectedIds.push(b.id)
+  }
+
+  const customProviders: CustomProvider[] = openaiBaseUrls
+    .map((baseUrl, i) => ({ baseUrl, apiKey: openaiApiKeys[i] ?? '' }))
+    .filter((p) => !KNOWN_BASE_URLS.has(p.baseUrl))
+
+  return { connectedIds, customProviders, openaiBaseUrls, openaiApiKeys }
 }
 
 // Poll cadence for the webui.db change watcher. SQLite WAL writes update
@@ -228,10 +271,7 @@ export const webuiConfig = {
    * Keys we don't pass are left untouched, so admin-UI tweaks elsewhere
    * persist. Creates the row on first write if it doesn't exist.
    */
-  async merge(
-    effects: T.Effects,
-    partial: Record<string, any>,
-  ): Promise<void> {
+  async merge(effects: T.Effects, partial: Record<string, any>): Promise<void> {
     const current = await readRaw(effects)
     const next = deepMerge(current, partial)
     await writeRaw(effects, next)

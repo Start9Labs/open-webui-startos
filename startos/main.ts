@@ -3,10 +3,12 @@ import { i18n } from './i18n'
 import { sdk } from './sdk'
 import { mainMounts, uiPort } from './utils'
 import {
-  ensureVllmPublicMounted,
-  vllmCredentialsFile,
-} from './vllmCredentials'
-import { OLLAMA_BASE_URL, VLLM_BASE_URL, webuiConfig } from './webuiConfig'
+  ensurePublicMounted,
+  KNOWN_OPENAI,
+  OLLAMA_BASE_URL,
+  publicCredentialsFile,
+} from './backends'
+import { adminExists, webuiConfig } from './webuiConfig'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting Open WebUI!'))
@@ -18,35 +20,51 @@ export const main = sdk.setupMain(async ({ effects }) => {
     throw new Error('store.json WEBUI_SECRET_KEY not found')
   }
 
-  // Reactively mirror vLLM's published API key into the slot we manage in
-  // webui.db. .const(effects) registers this setupMain run as a dependent
-  // of the credentials file — when vllm rotates the key, setupMain re-runs
-  // and we patch the matching openai.api_keys index *before* the daemon
-  // starts back up, so the daemon picks up the new key from its own DB.
+  // Reactively keep public-credential backends' keys fresh. .const(effects)
+  // registers this setupMain run as a dependent of each connected backend's
+  // published credentials file — when one (e.g. vLLM) rotates its key,
+  // setupMain re-runs and we patch the matching openai.api_keys slot in place
+  // *before* the daemon starts back up, so it picks up the new key from its
+  // own DB. (llama.cpp's key doesn't rotate, but the mechanism is uniform.)
   const view = await webuiConfig.read(effects).once()
-  if (view.enableVllm) {
-    await ensureVllmPublicMounted(effects)
-    const apiKey = await vllmCredentialsFile
-      .read((c) => c.apiKey)
-      .const(effects)
-    if (!apiKey) {
+  const urls = [...view.openaiBaseUrls]
+  const keys = [...view.openaiApiKeys]
+  let changed = false
+  for (const b of KNOWN_OPENAI) {
+    if (b.keySource !== 'public') continue
+    if (!view.connectedIds.includes(b.id)) continue
+    const idx = urls.indexOf(b.baseUrl)
+    if (idx < 0) continue
+    let freshKey: string | null = null
+    try {
+      await ensurePublicMounted(effects, b.id)
+      freshKey = await publicCredentialsFile(b.id)
+        .read((c) => c.apiKey)
+        .const(effects)
+    } catch {
+      freshKey = null
+    }
+    if (!freshKey && b.keyRequired) {
       throw new Error(
-        'vLLM backend is enabled but its API key could not be read from ' +
-          'vllm:public/credentials.json. Make sure vllm is installed and ' +
-          'running, and that it is at a version that publishes the public ' +
-          'credentials volume (>= 0.16.0:0.1).',
+        `${b.title} backend is enabled but its API key could not be read ` +
+          `from ${b.id}:public/credentials.json. Make sure ${b.title} is ` +
+          `installed, running, and at version ${b.versionRange} or newer.`,
       )
     }
-    if (view.vllmApiKey !== apiKey) {
-      const baseUrls = [
-        VLLM_BASE_URL,
-        ...view.customProviders.map((p) => p.baseUrl),
-      ]
-      const apiKeys = [apiKey, ...view.customProviders.map((p) => p.apiKey)]
-      await webuiConfig.merge(effects, {
-        openai: { api_base_urls: baseUrls, api_keys: apiKeys },
-      })
+    if (freshKey && keys[idx] !== freshKey) {
+      keys[idx] = freshKey
+      changed = true
     }
+  }
+  // Defense-in-depth for issue #15: never write the config table before an
+  // admin exists. In practice `changed` can only be true once a backend has
+  // been wired (which itself requires an admin), so the skip is effectively
+  // unreachable — but it makes the invariant explicit and, unlike a throw,
+  // can never block daemon startup or touch a pre-onboarding database.
+  if (changed && (await adminExists(effects))) {
+    await webuiConfig.merge(effects, {
+      openai: { api_base_urls: urls, api_keys: keys },
+    })
   }
 
   return sdk.Daemons.of(effects).addDaemon('primary', {

@@ -2,15 +2,14 @@ import { utils } from '@start9labs/start-sdk'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 import { mainMounts, webuiDb } from '../utils'
+import { adminExists } from '../webuiConfig'
 
 export const resetPassword = sdk.Action.withoutInput(
   'reset-password',
 
   {
     name: i18n('Reset Admin Password'),
-    description: i18n(
-      'Reset the admin user password in case you forget it',
-    ),
+    description: i18n('Reset the admin user password in case you forget it'),
     warning: null,
     allowedStatuses: 'any',
     group: null,
@@ -18,6 +17,18 @@ export const resetPassword = sdk.Action.withoutInput(
   },
 
   async ({ effects }) => {
+    // Same ordering guard as Configure Backends (issue #15): there's no admin
+    // to reset before Open WebUI has initialized its schema and first account.
+    // Without this, the query below hits a missing `user` table and surfaces an
+    // opaque traceback instead of an actionable message.
+    if (!(await adminExists(effects))) {
+      throw new Error(
+        i18n(
+          "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before resetting the password.",
+        ),
+      )
+    }
+
     const newPassword = utils.getDefaultString({
       charset: 'a-z,A-Z,1-9',
       len: 22,

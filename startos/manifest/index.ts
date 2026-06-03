@@ -2,19 +2,55 @@ import { setupManifest } from '@start9labs/start-sdk'
 import i18n from './i18n'
 
 const depOllamaDescription = {
-  en_US: 'Optional: host local LLMs with Ollama. Toggle on/off via the Configure Backends action.',
-  es_ES: 'Opcional: aloja LLMs locales con Ollama. Actívalo/desactívalo mediante la acción Configurar Backends.',
-  de_DE: 'Optional: lokale LLMs mit Ollama hosten. Über die Aktion „Backends konfigurieren“ aktivieren/deaktivieren.',
-  pl_PL: 'Opcjonalnie: hostuj lokalne LLM za pomocą Ollama. Włącz/wyłącz w akcji Konfiguruj backendy.',
-  fr_FR: "Optionnel : hébergez des LLM locaux avec Ollama. Activez/désactivez via l'action Configurer les backends.",
+  en_US:
+    'Optional: host local LLMs with Ollama. Connect it via the Configure Backends action.',
+  es_ES:
+    'Opcional: aloja LLMs locales con Ollama. Conéctalo mediante la acción Configurar Backends.',
+  de_DE:
+    'Optional: lokale LLMs mit Ollama hosten. Über die Aktion „Backends konfigurieren“ verbinden.',
+  pl_PL:
+    'Opcjonalnie: hostuj lokalne LLM za pomocą Ollama. Połącz w akcji Konfiguruj backendy.',
+  fr_FR:
+    "Optionnel : hébergez des LLM locaux avec Ollama. Connectez-le via l'action Configurer les backends.",
 }
 
 const depVllmDescription = {
-  en_US: 'Optional: serve local LLMs through vLLM\'s OpenAI-compatible API. Toggle on/off via the Configure Backends action.',
-  es_ES: 'Opcional: sirve LLMs locales a través de la API compatible con OpenAI de vLLM. Actívalo/desactívalo mediante la acción Configurar Backends.',
-  de_DE: 'Optional: lokale LLMs über die OpenAI-kompatible API von vLLM bereitstellen. Über die Aktion „Backends konfigurieren“ aktivieren/deaktivieren.',
-  pl_PL: 'Opcjonalnie: serwuj lokalne LLM przez API zgodne z OpenAI z vLLM. Włącz/wyłącz w akcji Konfiguruj backendy.',
-  fr_FR: "Optionnel : servez des LLM locaux via l'API compatible OpenAI de vLLM. Activez/désactivez via l'action Configurer les backends.",
+  en_US:
+    "Optional: serve local LLMs through vLLM's OpenAI-compatible API. Connect it via the Configure Backends action.",
+  es_ES:
+    'Opcional: sirve LLMs locales a través de la API compatible con OpenAI de vLLM. Conéctalo mediante la acción Configurar Backends.',
+  de_DE:
+    'Optional: lokale LLMs über die OpenAI-kompatible API von vLLM bereitstellen. Über die Aktion „Backends konfigurieren“ verbinden.',
+  pl_PL:
+    'Opcjonalnie: serwuj lokalne LLM przez API zgodne z OpenAI z vLLM. Połącz w akcji Konfiguruj backendy.',
+  fr_FR:
+    "Optionnel : servez des LLM locaux via l'API compatible OpenAI de vLLM. Connectez-le via l'action Configurer les backends.",
+}
+
+const depLlamaCppDescription = {
+  en_US:
+    "Optional: serve local GGUF models through llama.cpp's OpenAI-compatible API. Connect it via the Configure Backends action.",
+  es_ES:
+    'Opcional: sirve modelos GGUF locales a través de la API compatible con OpenAI de llama.cpp. Conéctalo mediante la acción Configurar Backends.',
+  de_DE:
+    'Optional: lokale GGUF-Modelle über die OpenAI-kompatible API von llama.cpp bereitstellen. Über die Aktion „Backends konfigurieren“ verbinden.',
+  pl_PL:
+    'Opcjonalnie: serwuj lokalne modele GGUF przez API zgodne z OpenAI z llama.cpp. Połącz w akcji Konfiguruj backendy.',
+  fr_FR:
+    "Optionnel : servez des modèles GGUF locaux via l'API compatible OpenAI de llama.cpp. Connectez-le via l'action Configurer les backends.",
+}
+
+const depMapleProxyDescription = {
+  en_US:
+    "Optional: connect to Maple's privacy-preserving, OpenAI-compatible inference through the Maple Proxy package. Connect it via the Configure Backends action.",
+  es_ES:
+    'Opcional: conéctate a la inferencia compatible con OpenAI y respetuosa con la privacidad de Maple a través del paquete Maple Proxy. Conéctalo mediante la acción Configurar Backends.',
+  de_DE:
+    'Optional: über das Maple-Proxy-Paket eine datenschutzfreundliche, OpenAI-kompatible Inferenz von Maple anbinden. Über die Aktion „Backends konfigurieren“ verbinden.',
+  pl_PL:
+    'Opcjonalnie: połącz się z chroniącą prywatność, zgodną z OpenAI inferencją Maple za pośrednictwem pakietu Maple Proxy. Połącz w akcji Konfiguruj backendy.',
+  fr_FR:
+    "Optionnel : connectez-vous à l'inférence compatible OpenAI et respectueuse de la vie privée de Maple via le paquet Maple Proxy. Connectez-le via l'action Configurer les backends.",
 }
 
 const depSearxngDescription = {
@@ -63,6 +99,22 @@ export const manifest = setupManifest({
       metadata: {
         icon: 'https://raw.githubusercontent.com/Start9Labs/vllm-startos/master/icon.svg',
         title: 'vLLM',
+      },
+    },
+    'llama-cpp': {
+      optional: true,
+      description: depLlamaCppDescription,
+      metadata: {
+        icon: 'https://raw.githubusercontent.com/Start9Labs/llama-cpp-startos/master/icon.png',
+        title: 'llama.cpp',
+      },
+    },
+    'maple-proxy': {
+      optional: true,
+      description: depMapleProxyDescription,
+      metadata: {
+        icon: 'https://raw.githubusercontent.com/Start9-Community/maple-proxy-startos/master/icon.png',
+        title: 'Maple Proxy',
       },
     },
     searxng: {

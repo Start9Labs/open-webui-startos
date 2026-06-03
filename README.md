@@ -10,7 +10,7 @@
 > Open WebUI. If a feature, setting, or behavior is not mentioned here, the
 > upstream documentation is accurate and fully applicable.
 
-[Open WebUI](https://github.com/open-webui/open-webui) is an extensible, self-hosted AI interface that connects to Ollama for running local LLMs. This repository packages it for [StartOS](https://github.com/Start9Labs/start-os).
+[Open WebUI](https://github.com/open-webui/open-webui) is an extensible, self-hosted AI interface for chatting with large language models. On StartOS it connects to Ollama, vLLM, llama.cpp, Maple Proxy, or any external OpenAI-compatible API. This repository packages it for [StartOS](https://github.com/Start9Labs/start-os).
 
 - **Upstream repo:** <https://github.com/open-webui/open-webui>
 - **Wrapper repo:** <https://github.com/Start9Labs/open-webui-startos>
@@ -52,7 +52,9 @@
 
 ## Installation and First-Run Flow
 
-On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.json`. The app is ready to use immediately — open the web UI and register your admin account.
+On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.json`. The app is ready to use immediately.
+
+**Order matters:** open the **Web UI** and register your admin account _before_ running **Configure Backends**. Open WebUI creates its SQLite schema (and the admin user) on first launch; the Configure Backends action refuses to run until an admin exists, because writing backend config into a not-yet-initialized database corrupts it. Once the admin is created, run **Configure Backends** to connect your LLM backends.
 
 ## Configuration Management
 
@@ -98,6 +100,14 @@ All other configuration is done through the Open WebUI web interface:
 
 ## Actions (StartOS UI)
 
+### Configure Backends (`configure-backends`)
+
+- **Purpose:** Connect Open WebUI to LLM backends. Auto-detects the compatible StartOS AI services you have installed (`ollama`, `vllm`, `llama-cpp`, `maple-proxy`) and presents them as a multiselect; selecting one fills in its internal `.startos` URL and, where available, its API key — read from the dependency's published `public/credentials.json` for vLLM and llama.cpp, or a placeholder for Maple Proxy. A separate list lets you add arbitrary external OpenAI-compatible providers (base URL + optional key).
+- **Visibility:** Enabled
+- **Availability:** Any status (running or stopped)
+- **Guard:** Refuses to run until a first admin account exists (see [Installation and First-Run Flow](#installation-and-first-run-flow)).
+- **Effect:** Writes `ollama.*` / `openai.*` into Open WebUI's config DB, updates the package's running-dependency set, and restarts Open WebUI.
+
 ### Reset Admin Password (`reset-password`)
 
 - **Purpose:** Generates a new random 22-character password for the first admin user
@@ -108,11 +118,17 @@ All other configuration is done through the Open WebUI web interface:
 
 ## Dependencies
 
-| Dependency | Required | Version Constraint | Health Checks | Purpose |
-|------------|----------|-------------------|---------------|---------|
-| Ollama | Yes | `>=0.19.0` | `primary` | LLM backend for model inference |
+All dependencies are **optional** — Open WebUI installs and runs without any of them (you just can't chat until at least one LLM backend is connected). A backend becomes an active running-dependency only when you select it in **Configure Backends**, which calls `setDependencies` so StartOS keeps it running.
 
-Ollama must be installed and running. Open WebUI automatically connects to it at `http://ollama.startos:11434`.
+| Dependency | Required | Version Constraint | Health Check | Internal URL | Notes |
+|------------|----------|-------------------|--------------|--------------|-------|
+| Ollama | Optional | `>=0.21.0:0` | `primary` | `http://ollama.startos:11434` | Local-model backend (Ollama native API); no key |
+| vLLM | Optional | `>=0.16.0:0.1` | `primary` | `http://vllm.startos:8000/v1` | OpenAI-compatible; API key read automatically from `vllm:public` |
+| llama.cpp | Optional | `>=1.0.9468:1` | `primary` | `http://llama-cpp.startos:8080/v1` | OpenAI-compatible; API key read automatically from `llama-cpp:public` |
+| Maple Proxy | Optional | `>=0.1.8:1` | `maple-proxy` | `http://maple-proxy.startos:8080/v1` | OpenAI-compatible privacy proxy; placeholder key (override in admin panel) |
+| SearXNG | Optional | — | — | `http://searxng.startos:80` | Self-hosted web search |
+
+SearXNG is the exception to the rule above: it is **not** wired through Configure Backends. Install it, then turn web search on from Open WebUI's own **Admin Panel → Settings → Web Search** (the engine and query URL are pre-filled).
 
 ## Backups and Restore
 
@@ -136,9 +152,10 @@ The extended grace period accounts for Open WebUI's initialization time.
 
 ## Limitations and Differences
 
-1. **Ollama required**: Cannot run without Ollama; external OpenAI-compatible APIs can be configured through the UI but Ollama dependency is mandatory
-2. **No GPU acceleration**: Performance depends on StartOS hardware; large models may be slow
-3. **Model downloads**: Must download models through Ollama, not directly in Open WebUI
+1. **A backend is needed to chat**: Open WebUI installs and runs on its own, but you must connect at least one LLM backend (via **Configure Backends** or an external OpenAI-compatible provider) before you can chat.
+2. **Configure Backends ordering**: The action refuses to run until you've opened the Web UI and created the first admin account — this prevents a database-corruption failure mode (issue #15).
+3. **Maple Proxy API key**: Open WebUI can't read Maple Proxy's key automatically, so it seeds a non-empty placeholder. If your Maple Proxy enforces a key, replace the placeholder in Open WebUI's admin panel.
+4. **No GPU acceleration for Open WebUI itself**: Inference runs in the backend services; large models may be slow depending on hardware.
 
 ## What Is Unchanged from Upstream
 
@@ -171,8 +188,12 @@ volumes:
   startos: host (store.json)
 ports:
   ui: 8080
-dependencies:
-  - ollama
+dependencies: # all optional; registered as running-deps when selected in Configure Backends
+  - ollama # http://ollama.startos:11434 (native; no key)
+  - vllm # http://vllm.startos:8000/v1 (key auto-read from vllm:public)
+  - llama-cpp # http://llama-cpp.startos:8080/v1 (key auto-read from llama-cpp:public)
+  - maple-proxy # http://maple-proxy.startos:8080/v1 (placeholder key)
+  - searxng # http://searxng.startos:80 (web search; enabled in admin panel, not Configure Backends)
 startos_managed_env_vars:
   - OLLAMA_BASE_URL
   - WEBUI_SECRET_KEY
@@ -182,5 +203,6 @@ startos_managed_env_vars:
   - ENABLE_ADMIN_ANALYTICS
   - WEBUI_SESSION_COOKIE_SECURE
 actions:
+  - configure-backends
   - reset-password
 ```

@@ -1,11 +1,17 @@
+import { T } from '@start9labs/start-sdk'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 import { setDependencies } from '../dependencies'
 import {
-  ensureVllmPublicMounted,
-  vllmCredentialsFile,
-} from '../vllmCredentials'
-import { OLLAMA_BASE_URL, VLLM_BASE_URL, webuiConfig } from '../webuiConfig'
+  detectInstalled,
+  KnownBackend,
+  KNOWN_BASE_URLS,
+  KNOWN_OPENAI,
+  OLLAMA_BASE_URL,
+  PLACEHOLDER_API_KEY,
+  readPublicApiKey,
+} from '../backends'
+import { adminExists, webuiConfig } from '../webuiConfig'
 
 const { InputSpec, Value, List } = sdk
 
@@ -36,20 +42,29 @@ const providerSpec = InputSpec.of({
   }),
 })
 
+function labelFor(b: KnownBackend): string {
+  const kind =
+    b.protocol === 'ollama' ? i18n('local models') : i18n('OpenAI-compatible')
+  return `${b.title} (${kind})`
+}
+
 const inputSpec = InputSpec.of({
-  enableOllama: Value.toggle({
-    name: i18n('Enable Ollama Backend'),
-    description: i18n(
-      'Add Ollama as a dependency and connect Open WebUI to it.',
-    ),
-    default: true,
-  }),
-  enableVllm: Value.toggle({
-    name: i18n('Enable vLLM Backend'),
-    description: i18n(
-      'Add vLLM as a dependency and connect Open WebUI to it.',
-    ),
-    default: false,
+  connectedServices: Value.dynamicMultiselect(async ({ effects, prefill }) => {
+    const detected = await detectInstalled(effects)
+    const values: Record<string, string> = {}
+    for (const b of detected) values[b.id] = labelFor(b)
+    const prior =
+      (prefill as { connectedServices?: string[] } | null)?.connectedServices ??
+      []
+    return {
+      name: i18n('Connect detected services'),
+      description: i18n(
+        'AI backends installed on this server that Open WebUI can connect to. Check the ones you want to use — their connection URL (and API key, where it can be read automatically) is filled in for you. Open the Web UI and create your admin account before running this.',
+      ),
+      values,
+      // dynamicMultiselect requires every default to be a key in values.
+      default: prior.filter((id) => id in values),
+    }
   }),
   customProviders: Value.list(
     List.obj(
@@ -68,6 +83,35 @@ const inputSpec = InputSpec.of({
     ),
   ),
 })
+
+/**
+ * Resolve the API key to store for a selected OpenAI backend. For `public`
+ * backends we read the key the dependency publishes (throwing for vLLM, which
+ * requires it; falling back gracefully for llama.cpp). For `placeholder`
+ * backends we keep any key the user already set, else seed a non-empty
+ * placeholder (Open WebUI rejects an empty key field).
+ */
+async function resolveKey(
+  effects: T.Effects,
+  b: KnownBackend,
+  currentKey: string,
+): Promise<string> {
+  if (b.keySource === 'public') {
+    const key = await readPublicApiKey(effects, b.id)
+    if (key) return key
+    if (b.keyRequired) {
+      throw new Error(
+        `${b.title} is enabled but its API key could not be read from ` +
+          `${b.id}:public/credentials.json. Make sure ${b.title} is installed, ` +
+          `running, and at a version that publishes its public credentials ` +
+          `(${b.versionRange}).`,
+      )
+    }
+    return currentKey || PLACEHOLDER_API_KEY
+  }
+  if (b.keySource === 'placeholder') return currentKey || PLACEHOLDER_API_KEY
+  return ''
+}
 
 export const configureBackends = sdk.Action.withInput(
   'configure-backends',
@@ -88,8 +132,7 @@ export const configureBackends = sdk.Action.withInput(
   async ({ effects }) => {
     const view = await webuiConfig.read(effects).once()
     return {
-      enableOllama: view.enableOllama,
-      enableVllm: view.enableVllm,
+      connectedServices: view.connectedIds,
       customProviders: view.customProviders.map((p) => ({
         baseUrl: p.baseUrl,
         apiKey: p.apiKey || null,
@@ -98,42 +141,47 @@ export const configureBackends = sdk.Action.withInput(
   },
 
   async ({ effects, input }) => {
-    let vllmApiKey: string | null = null
-    if (input.enableVllm) {
-      await ensureVllmPublicMounted(effects)
-      const cred = await vllmCredentialsFile.read((c) => c.apiKey).once()
-      if (!cred) {
-        throw new Error(
-          'vLLM is enabled but its API key could not be read from ' +
-            'vllm:public/credentials.json. Make sure vllm is installed and ' +
-            'running, and that it is at a version that publishes the public ' +
-            'credentials volume (>= 0.16.0:0.1).',
-        )
-      }
-      vllmApiKey = cred
+    // Issue #15: refuse to write config until Open WebUI has initialized its
+    // schema and a first admin exists. Writing the `config` table before then
+    // corrupts onboarding. adminExists() is file-existence gated, so this also
+    // never creates an empty webui.db.
+    if (!(await adminExists(effects))) {
+      throw new Error(
+        i18n(
+          "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before configuring backends.",
+        ),
+      )
     }
 
-    // Compose the openai lists. The managed vllm slot is always first
-    // (when enabled); the rest is whatever the user listed under custom
-    // providers. Filter out duplicates of VLLM_BASE_URL so toggling vLLM
-    // off via the toggle plus leaving it in the custom list doesn't
-    // accidentally re-enable it.
+    const selected = new Set(input.connectedServices)
+    const view = await webuiConfig.read(effects).once()
+    const currentKeyFor = (b: KnownBackend): string => {
+      const idx = view.openaiBaseUrls.indexOf(b.baseUrl)
+      return idx >= 0 ? (view.openaiApiKeys[idx] ?? '') : ''
+    }
+
+    const ollamaOn = selected.has('ollama')
+
+    // Build the openai lists: selected known OpenAI backends first (in registry
+    // order, each with its resolved key), then the user's manual providers.
+    // Skip any manual entry whose URL collides with a managed backend.
     const baseUrls: string[] = []
     const apiKeys: string[] = []
-    if (input.enableVllm) {
-      baseUrls.push(VLLM_BASE_URL)
-      apiKeys.push(vllmApiKey ?? '')
+    for (const b of KNOWN_OPENAI) {
+      if (!selected.has(b.id)) continue
+      baseUrls.push(b.baseUrl)
+      apiKeys.push(await resolveKey(effects, b, currentKeyFor(b)))
     }
     for (const p of input.customProviders) {
-      if (p.baseUrl === VLLM_BASE_URL) continue
+      if (KNOWN_BASE_URLS.has(p.baseUrl)) continue
       baseUrls.push(p.baseUrl)
       apiKeys.push(p.apiKey ?? '')
     }
 
     await webuiConfig.merge(effects, {
       ollama: {
-        enable: input.enableOllama,
-        base_urls: input.enableOllama ? [OLLAMA_BASE_URL] : [],
+        enable: ollamaOn,
+        base_urls: ollamaOn ? [OLLAMA_BASE_URL] : [],
       },
       openai: {
         enable: baseUrls.length > 0,

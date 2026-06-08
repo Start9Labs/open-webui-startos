@@ -81,11 +81,12 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     title: 'llama.cpp',
     protocol: 'openai',
     baseUrl: LLAMA_CPP_BASE_URL,
-    // First release that publishes its API key on a public volume; older
-    // versions are still selectable but fall back to a placeholder key.
-    versionRange: '>=1.0.9468:1',
+    // llama.cpp runs keyless behind StartOS proxy basic auth; we reach it over
+    // the internal mesh, which isn't behind that gate, so no key is needed.
+    // Requires the keyless release.
+    versionRange: '>=1.0.9544:0',
     healthCheck: 'primary',
-    keySource: 'public',
+    keySource: 'placeholder',
     keyRequired: false,
   },
   {

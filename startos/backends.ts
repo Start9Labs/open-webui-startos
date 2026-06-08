@@ -81,9 +81,11 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     title: 'llama.cpp',
     protocol: 'openai',
     baseUrl: LLAMA_CPP_BASE_URL,
-    // llama.cpp runs keyless behind StartOS proxy basic auth; we reach it over
-    // the internal mesh, which isn't behind that gate, so no key is needed.
-    // Requires the keyless release.
+    // Dependency minimum, enforced by setupDependencies (which reads this
+    // versionRange). 1.0.9544:0 is llama.cpp's keyless release: it dropped its
+    // API key and now authenticates the UI/API at the StartOS proxy, so we
+    // connect keyless over the internal mesh. Bump this whenever a llama.cpp
+    // change breaks how we connect.
     versionRange: '>=1.0.9544:0',
     healthCheck: 'primary',
     keySource: 'placeholder',

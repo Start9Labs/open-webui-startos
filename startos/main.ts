@@ -25,7 +25,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   // published credentials file — when one (e.g. vLLM) rotates its key,
   // setupMain re-runs and we patch the matching openai.api_keys slot in place
   // *before* the daemon starts back up, so it picks up the new key from its
-  // own DB. (llama.cpp's key doesn't rotate, but the mechanism is uniform.)
+  // own DB. (vLLM is currently the only public-credential backend.)
   const view = await webuiConfig.read(effects).once()
   const urls = [...view.openaiBaseUrls]
   const keys = [...view.openaiApiKeys]

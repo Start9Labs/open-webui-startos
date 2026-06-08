@@ -102,7 +102,7 @@ All other configuration is done through the Open WebUI web interface:
 
 ### Configure Backends (`configure-backends`)
 
-- **Purpose:** Connect Open WebUI to LLM backends. Auto-detects the compatible StartOS AI services you have installed (`ollama`, `vllm`, `llama-cpp`, `maple-proxy`) and presents them as a multiselect; selecting one fills in its internal `.startos` URL and, where available, its API key — read from the dependency's published `public/credentials.json` for vLLM and llama.cpp, or a placeholder for Maple Proxy. A separate list lets you add arbitrary external OpenAI-compatible providers (base URL + optional key).
+- **Purpose:** Connect Open WebUI to LLM backends. Auto-detects the compatible StartOS AI services you have installed (`ollama`, `vllm`, `llama-cpp`, `maple-proxy`) and presents them as a multiselect; selecting one fills in its internal `.startos` URL and, where available, its API key — read from the dependency's published `public/credentials.json` for vLLM, or a placeholder for keyless backends (llama.cpp, Maple Proxy). A separate list lets you add arbitrary external OpenAI-compatible providers (base URL + optional key).
 - **Visibility:** Enabled
 - **Availability:** Any status (running or stopped)
 - **Guard:** Refuses to run until a first admin account exists (see [Installation and First-Run Flow](#installation-and-first-run-flow)).
@@ -124,7 +124,7 @@ All dependencies are **optional** — Open WebUI installs and runs without any o
 |------------|----------|-------------------|--------------|--------------|-------|
 | Ollama | Optional | `>=0.21.0:0` | `primary` | `http://ollama.startos:11434` | Local-model backend (Ollama native API); no key |
 | vLLM | Optional | `>=0.16.0:0.1` | `primary` | `http://vllm.startos:8000/v1` | OpenAI-compatible; API key read automatically from `vllm:public` |
-| llama.cpp | Optional | `>=1.0.9468:1` | `primary` | `http://llama-cpp.startos:8080/v1` | OpenAI-compatible; API key read automatically from `llama-cpp:public` |
+| llama.cpp | Optional | `>=1.0.9544:0` | `primary` | `http://llama-cpp.startos:8080/v1` | OpenAI-compatible; keyless over the internal mesh (UI/API auth is at llama.cpp's own proxy) |
 | Maple Proxy | Optional | `>=0.1.8:1` | `maple-proxy` | `http://maple-proxy.startos:8080/v1` | OpenAI-compatible privacy proxy; placeholder key (override in admin panel) |
 | SearXNG | Optional | — | — | `http://searxng.startos:80` | Self-hosted web search |
 
@@ -191,7 +191,7 @@ ports:
 dependencies: # all optional; registered as running-deps when selected in Configure Backends
   - ollama # http://ollama.startos:11434 (native; no key)
   - vllm # http://vllm.startos:8000/v1 (key auto-read from vllm:public)
-  - llama-cpp # http://llama-cpp.startos:8080/v1 (key auto-read from llama-cpp:public)
+  - llama-cpp # http://llama-cpp.startos:8080/v1 (keyless over internal mesh)
   - maple-proxy # http://maple-proxy.startos:8080/v1 (placeholder key)
   - searxng # http://searxng.startos:80 (web search; enabled in admin panel, not Configure Backends)
 startos_managed_env_vars:

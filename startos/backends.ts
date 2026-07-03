@@ -61,7 +61,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     title: 'Ollama',
     protocol: 'ollama',
     baseUrl: OLLAMA_BASE_URL,
-    versionRange: '>=0.21.0:0',
+    versionRange: '>=0.31.1:1',
     healthCheck: 'primary',
     keySource: 'none',
     keyRequired: false,
@@ -71,7 +71,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     title: 'vLLM',
     protocol: 'openai',
     baseUrl: VLLM_BASE_URL,
-    versionRange: '>=0.16.0:0.1',
+    versionRange: '>=0.23.1-rc.0:10',
     healthCheck: 'primary',
     keySource: 'public',
     keyRequired: true,
@@ -86,7 +86,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     // API key and now authenticates the UI/API at the StartOS proxy, so we
     // connect keyless over the internal mesh. Bump this whenever a llama.cpp
     // change breaks how we connect.
-    versionRange: '>=1.0.9544:0',
+    versionRange: '>=1.0.9837:1',
     healthCheck: 'primary',
     keySource: 'placeholder',
     keyRequired: false,
@@ -96,7 +96,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     title: 'Maple Proxy',
     protocol: 'openai',
     baseUrl: MAPLE_PROXY_BASE_URL,
-    versionRange: '>=0.1.8:1',
+    versionRange: '>=0.1.8:2',
     healthCheck: 'maple-proxy',
     keySource: 'placeholder',
     keyRequired: false,

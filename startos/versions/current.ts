@@ -1,63 +1,68 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.10.1:0',
+  version: '0.10.2:0',
   releaseNotes: {
-    en_US: `Updated Open WebUI to 0.10.1.
+    en_US: `Updated Open WebUI to 0.10.2.
 
-- Share folders and their chats with users or groups, with read/write access.
-- Automatic context compaction keeps long chats within a model's context window.
-- Reworked memory system with distinct long-lived and per-conversation memories.
-- New event system: outbound webhooks and an Event plugin primitive reacting to app-wide activity.
-- Configure LDAP and OAuth/OIDC from a dedicated admin Authentication page.
-- Optional Argon2 password hashing and encryption of valve values at rest.
-- 0.10.1 fixes shared read-only chats incorrectly signing users out.
+This is a security and bug-fix release; updating is recommended.
 
-Full notes: https://github.com/open-webui/open-webui/releases/tag/v0.10.1`,
-    es_ES: `Open WebUI actualizado a 0.10.1.
+- Security and access-control fixes across the app.
+- Streamed reasoning: models that emit thinking now show it live as it streams.
+- Folder uploads to knowledge bases now preserve their subfolder structure.
+- Safer SQLite upgrades: the user-table migration no longer crashes or corrupts saved settings.
+- A single authorization error no longer signs you out while your session is still valid.
+- Non-admin users can save their interface settings again, and Python code execution loads reliably.
 
-- Comparte carpetas y sus chats con usuarios o grupos, con acceso de lectura/escritura.
-- La compactación automática del contexto mantiene los chats largos dentro de la ventana de contexto del modelo.
-- Sistema de memoria rediseñado con memorias persistentes y por conversación.
-- Nuevo sistema de eventos: webhooks salientes y un primitivo de plugin Event que reacciona a la actividad de la aplicación.
-- Configura LDAP y OAuth/OIDC desde una página de autenticación de administración dedicada.
-- Hash de contraseñas Argon2 opcional y cifrado de valores de valve en reposo.
-- 0.10.1 corrige que los chats compartidos de solo lectura cerraran la sesión de los usuarios.
+Full notes: https://github.com/open-webui/open-webui/releases/tag/v0.10.2`,
+    es_ES: `Open WebUI actualizado a 0.10.2.
 
-Notas completas: https://github.com/open-webui/open-webui/releases/tag/v0.10.1`,
-    de_DE: `Open WebUI auf 0.10.1 aktualisiert.
+Esta es una versión de seguridad y correcciones; se recomienda actualizar.
 
-- Teile Ordner und ihre Chats mit Nutzern oder Gruppen, mit Lese-/Schreibzugriff.
-- Automatische Kontextverdichtung hält lange Chats im Kontextfenster des Modells.
-- Überarbeitetes Speichersystem mit langlebigen und gesprächsbezogenen Erinnerungen.
-- Neues Ereignissystem: ausgehende Webhooks und ein Event-Plugin-Primitiv, das auf anwendungsweite Aktivität reagiert.
-- Konfiguriere LDAP und OAuth/OIDC über eine eigene Admin-Authentifizierungsseite.
-- Optionales Argon2-Passwort-Hashing und Verschlüsselung von Valve-Werten im Ruhezustand.
-- 0.10.1 behebt, dass geteilte schreibgeschützte Chats Nutzer fälschlich abmeldeten.
+- Correcciones de seguridad y control de acceso en toda la aplicación.
+- Razonamiento en streaming: los modelos que emiten pensamiento ahora lo muestran en vivo mientras se transmite.
+- Las cargas de carpetas a bases de conocimiento ahora conservan su estructura de subcarpetas.
+- Actualizaciones de SQLite más seguras: la migración de la tabla de usuarios ya no falla ni corrompe la configuración guardada.
+- Un único error de autorización ya no cierra tu sesión mientras sigue siendo válida.
+- Los usuarios no administradores pueden volver a guardar su configuración de interfaz, y la ejecución de código Python carga de forma fiable.
 
-Vollständige Hinweise: https://github.com/open-webui/open-webui/releases/tag/v0.10.1`,
-    pl_PL: `Zaktualizowano Open WebUI do 0.10.1.
+Notas completas: https://github.com/open-webui/open-webui/releases/tag/v0.10.2`,
+    de_DE: `Open WebUI auf 0.10.2 aktualisiert.
 
-- Udostępniaj foldery i ich czaty użytkownikom lub grupom z dostępem do odczytu/zapisu.
-- Automatyczna kompaktacja kontekstu utrzymuje długie czaty w oknie kontekstu modelu.
-- Przeprojektowany system pamięci z trwałymi i przypisanymi do rozmowy wspomnieniami.
-- Nowy system zdarzeń: wychodzące webhooki i prymityw wtyczki Event reagujący na aktywność w całej aplikacji.
-- Konfiguruj LDAP i OAuth/OIDC z dedykowanej strony uwierzytelniania w panelu administracyjnym.
-- Opcjonalne haszowanie haseł Argon2 i szyfrowanie wartości valve w spoczynku.
-- 0.10.1 naprawia błędne wylogowywanie użytkowników z udostępnionych czatów tylko do odczytu.
+Dies ist eine Sicherheits- und Fehlerbehebungsversion; ein Update wird empfohlen.
 
-Pełne informacje: https://github.com/open-webui/open-webui/releases/tag/v0.10.1`,
-    fr_FR: `Open WebUI mis à jour vers 0.10.1.
+- Sicherheits- und Zugriffskontroll-Korrekturen in der gesamten App.
+- Streaming-Reasoning: Modelle, die Denkprozesse ausgeben, zeigen diese jetzt live während des Streamings an.
+- Ordner-Uploads in Wissensdatenbanken behalten jetzt ihre Unterordnerstruktur bei.
+- Sicherere SQLite-Upgrades: Die Migration der Benutzertabelle stürzt nicht mehr ab und beschädigt keine gespeicherten Einstellungen.
+- Ein einzelner Autorisierungsfehler meldet dich nicht mehr ab, während deine Sitzung noch gültig ist.
+- Nicht-Administratoren können ihre Oberflächeneinstellungen wieder speichern, und die Python-Codeausführung lädt zuverlässig.
 
-- Partagez des dossiers et leurs conversations avec des utilisateurs ou des groupes, en lecture/écriture.
-- La compaction automatique du contexte garde les longues conversations dans la fenêtre de contexte du modèle.
-- Système de mémoire repensé avec des mémoires persistantes et propres à chaque conversation.
-- Nouveau système d'événements : webhooks sortants et une primitive de plugin Event réagissant à l'activité de l'application.
-- Configurez LDAP et OAuth/OIDC depuis une page d'authentification dédiée dans l'administration.
-- Hachage de mot de passe Argon2 optionnel et chiffrement des valeurs de valve au repos.
-- 0.10.1 corrige la déconnexion erronée des utilisateurs sur les conversations partagées en lecture seule.
+Vollständige Hinweise: https://github.com/open-webui/open-webui/releases/tag/v0.10.2`,
+    pl_PL: `Zaktualizowano Open WebUI do 0.10.2.
 
-Notes complètes : https://github.com/open-webui/open-webui/releases/tag/v0.10.1`,
+To wydanie z poprawkami bezpieczeństwa i błędów; zalecana jest aktualizacja.
+
+- Poprawki bezpieczeństwa i kontroli dostępu w całej aplikacji.
+- Strumieniowe rozumowanie: modele emitujące proces myślenia pokazują go teraz na żywo podczas strumieniowania.
+- Przesyłanie folderów do baz wiedzy zachowuje teraz ich strukturę podfolderów.
+- Bezpieczniejsze aktualizacje SQLite: migracja tabeli użytkowników nie powoduje już awarii ani uszkodzenia zapisanych ustawień.
+- Pojedynczy błąd autoryzacji nie wylogowuje już użytkownika, gdy sesja jest nadal ważna.
+- Użytkownicy bez uprawnień administratora mogą ponownie zapisywać ustawienia interfejsu, a wykonywanie kodu Python ładuje się niezawodnie.
+
+Pełne informacje: https://github.com/open-webui/open-webui/releases/tag/v0.10.2`,
+    fr_FR: `Open WebUI mis à jour vers 0.10.2.
+
+Il s'agit d'une version de sécurité et de correction de bogues ; la mise à jour est recommandée.
+
+- Corrections de sécurité et de contrôle d'accès dans toute l'application.
+- Raisonnement en streaming : les modèles qui émettent une réflexion l'affichent désormais en direct pendant la diffusion.
+- Les téléversements de dossiers vers les bases de connaissances conservent désormais leur structure de sous-dossiers.
+- Mises à niveau SQLite plus sûres : la migration de la table des utilisateurs ne plante plus et ne corrompt plus les paramètres enregistrés.
+- Une seule erreur d'autorisation ne vous déconnecte plus tant que votre session est encore valide.
+- Les utilisateurs non administrateurs peuvent à nouveau enregistrer leurs paramètres d'interface, et l'exécution de code Python se charge de manière fiable.
+
+Notes complètes : https://github.com/open-webui/open-webui/releases/tag/v0.10.2`,
   },
   migrations: {
     up: async ({ effects }) => {},

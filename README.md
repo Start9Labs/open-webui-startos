@@ -62,7 +62,7 @@ On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.
 
 | Setting | Value | Purpose |
 |---------|-------|---------|
-| `OLLAMA_BASE_URL` | `http://ollama.startos:11434` | Connection to Ollama service |
+| `OLLAMA_BASE_URL` | `http://10.0.3.1:<assigned port>` | Connection to the Ollama service, resolved over the local service bridge (loopback placeholder when Ollama isn't installed) |
 | `WEBUI_SECRET_KEY` | Auto-generated | Session signing key |
 | `CORS_ALLOW_ORIGIN` | `*` | Allow cross-origin requests |
 | `ENABLE_VERSION_UPDATE_CHECK` | `false` | Disable upstream update checks |
@@ -70,7 +70,7 @@ On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.
 | `ENABLE_ADMIN_ANALYTICS` | `false` | Disable analytics |
 | `WEBUI_SESSION_COOKIE_SECURE` | `true` | Secure session cookies |
 | `WEB_SEARCH_ENGINE` | `searxng` | Default web-search backend (only used if web search is turned on) |
-| `SEARXNG_QUERY_URL` | `http://searxng.startos:80/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled |
+| `SEARXNG_QUERY_URL` | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled, resolved over the local service bridge (loopback placeholder when SearXNG isn't installed) |
 
 > Open WebUI treats most of these as `PersistentConfig` values: they're read from the env on first install and saved to the internal database. Subsequent edits via the Open WebUI admin panel override the defaults — changing them via env requires a fresh install or clearing the corresponding DB rows.
 
@@ -81,7 +81,7 @@ Web search is **off by default**. To turn it on:
 1. Install the optional [SearXNG](https://github.com/Start9Labs/searxng-startos) package on the same StartOS server.
 2. In Open WebUI, go to **Admin Panel → Settings → Web Search** and toggle web search on. The engine (`searxng`) and query URL are pre-filled.
 
-The pre-filled URL hits SearXNG's JSON API directly via the StartOS internal network. No public exposure is required.
+The pre-filled URL hits SearXNG's JSON API directly over the local StartOS service bridge (`10.0.3.1:<assigned port>`, resolved reactively from SearXNG's binding). No public exposure is required.
 
 ### User-Configurable Settings
 
@@ -102,7 +102,7 @@ All other configuration is done through the Open WebUI web interface:
 
 ### Configure Backends (`configure-backends`)
 
-- **Purpose:** Connect Open WebUI to LLM backends. Auto-detects the compatible StartOS AI services you have installed (`ollama`, `vllm`, `llama-cpp`, `maple-proxy`) and presents them as a multiselect; selecting one fills in its internal `.startos` URL and, where available, its API key — read from the dependency's published `public/credentials.json` for vLLM, or a placeholder for keyless backends (llama.cpp, Maple Proxy). A separate list lets you add arbitrary external OpenAI-compatible providers (base URL + optional key).
+- **Purpose:** Connect Open WebUI to LLM backends. Auto-detects the compatible StartOS AI services you have installed (`ollama`, `vllm`, `llama-cpp`, `maple-proxy`) and presents them as a multiselect; selecting one fills in its bridge address (`10.0.3.1:<assigned port>`, resolved from the dependency's binding) and, where available, its API key — read from the dependency's published `public/credentials.json` for vLLM, or a placeholder for keyless backends (llama.cpp, Maple Proxy). A separate list lets you add arbitrary external OpenAI-compatible providers (base URL + optional key).
 - **Visibility:** Enabled
 - **Availability:** Any status (running or stopped)
 - **Guard:** Refuses to run until a first admin account exists (see [Installation and First-Run Flow](#installation-and-first-run-flow)).
@@ -120,13 +120,15 @@ All other configuration is done through the Open WebUI web interface:
 
 All dependencies are **optional** — Open WebUI installs and runs without any of them (you just can't chat until at least one LLM backend is connected). A backend becomes an active running-dependency only when you select it in **Configure Backends**, which calls `setDependencies` so StartOS keeps it running.
 
-| Dependency | Required | Version Constraint | Health Check | Internal URL | Notes |
+Base URLs are resolved over the local service bridge (`10.0.3.1:<assigned external port>`) from each dependency's exported host-id/port consts via the `bridgeAddress` helper — the internal ports below are the dependency's own bind ports, not the external bridge ports.
+
+| Dependency | Required | Version Constraint | Health Check | Internal Port | Notes |
 |------------|----------|-------------------|--------------|--------------|-------|
-| Ollama | Optional | `>=0.21.0:0` | `primary` | `http://ollama.startos:11434` | Local-model backend (Ollama native API); no key |
-| vLLM | Optional | `>=0.16.0:0.1` | `primary` | `http://vllm.startos:8000/v1` | OpenAI-compatible; API key read automatically from `vllm:public` |
-| llama.cpp | Optional | `>=1.0.9544:0` | `primary` | `http://llama-cpp.startos:8080/v1` | OpenAI-compatible; keyless over the internal mesh (UI/API auth is at llama.cpp's own proxy) |
-| Maple Proxy | Optional | `>=0.1.8:1` | `maple-proxy` | `http://maple-proxy.startos:8080/v1` | OpenAI-compatible privacy proxy; placeholder key (override in admin panel) |
-| SearXNG | Optional | — | — | `http://searxng.startos:80` | Self-hosted web search |
+| Ollama | Optional | `>=0.21.0:0` | `primary` | `11434` (native API) | Local-model backend (Ollama native API); no key |
+| vLLM | Optional | `>=0.16.0:0.1` | `primary` | `8000` (`/v1`) | OpenAI-compatible; API key read automatically from `vllm:public` |
+| llama.cpp | Optional | `>=1.0.9544:0` | `primary` | `8080` (`/v1`) | OpenAI-compatible; keyless over the service bridge (UI/API auth is at llama.cpp's own proxy) |
+| Maple Proxy | Optional | `>=0.1.8:1` | `maple-proxy` | `8080` (`/v1`) | OpenAI-compatible privacy proxy; placeholder key (override in admin panel) |
+| SearXNG | Optional | — | — | `80` | Self-hosted web search |
 
 SearXNG is the exception to the rule above: it is **not** wired through Configure Backends. Install it, then turn web search on from Open WebUI's own **Admin Panel → Settings → Web Search** (the engine and query URL are pre-filled).
 
@@ -189,11 +191,12 @@ volumes:
 ports:
   ui: 8080
 dependencies: # all optional; registered as running-deps when selected in Configure Backends
-  - ollama # http://ollama.startos:11434 (native; no key)
-  - vllm # http://vllm.startos:8000/v1 (key auto-read from vllm:public)
-  - llama-cpp # http://llama-cpp.startos:8080/v1 (keyless over internal mesh)
-  - maple-proxy # http://maple-proxy.startos:8080/v1 (placeholder key)
-  - searxng # http://searxng.startos:80 (web search; enabled in admin panel, not Configure Backends)
+                # base URLs resolved over the service bridge (10.0.3.1:<assigned port>) from the dep's port const
+  - ollama # port 11434 (native; no key)
+  - vllm # port 8000 /v1 (key auto-read from vllm:public)
+  - llama-cpp # port 8080 /v1 (keyless over the service bridge)
+  - maple-proxy # port 8080 /v1 (placeholder key)
+  - searxng # port 80 (web search; enabled in admin panel, not Configure Backends)
 startos_managed_env_vars:
   - OLLAMA_BASE_URL
   - WEBUI_SECRET_KEY

@@ -5,11 +5,12 @@ import { setDependencies } from '../dependencies'
 import {
   detectInstalled,
   KnownBackend,
-  KNOWN_BASE_URLS,
+  KNOWN_BY_ID,
   KNOWN_OPENAI,
-  OLLAMA_BASE_URL,
+  placeholderBaseUrl,
   PLACEHOLDER_API_KEY,
   readPublicApiKey,
+  resolveBaseUrls,
 } from '../backends'
 import { adminExists, webuiConfig } from '../webuiConfig'
 
@@ -130,7 +131,8 @@ export const configureBackends = sdk.Action.withInput(
   inputSpec,
 
   async ({ effects }) => {
-    const view = await webuiConfig.read(effects).once()
+    const resolved = await resolveBaseUrls(effects, 'once')
+    const view = await webuiConfig.read(effects, resolved).once()
     return {
       connectedServices: view.connectedIds,
       customProviders: view.customProviders.map((p) => ({
@@ -154,9 +156,18 @@ export const configureBackends = sdk.Action.withInput(
     }
 
     const selected = new Set(input.connectedServices)
-    const view = await webuiConfig.read(effects).once()
+    // `.once()`: an action reads the current bridge addresses, it doesn't
+    // subscribe. The selectable services are all installed (detectInstalled),
+    // so each resolves to a live address; placeholderBaseUrl guards the
+    // uninstalled-mid-action race.
+    const resolved = await resolveBaseUrls(effects, 'once')
+    const knownBaseUrls = new Set(
+      Object.values(resolved).filter((u): u is string => u !== null),
+    )
+    const view = await webuiConfig.read(effects, resolved).once()
     const currentKeyFor = (b: KnownBackend): string => {
-      const idx = view.openaiBaseUrls.indexOf(b.baseUrl)
+      const url = resolved[b.id]
+      const idx = url ? view.openaiBaseUrls.indexOf(url) : -1
       return idx >= 0 ? (view.openaiApiKeys[idx] ?? '') : ''
     }
 
@@ -169,11 +180,11 @@ export const configureBackends = sdk.Action.withInput(
     const apiKeys: string[] = []
     for (const b of KNOWN_OPENAI) {
       if (!selected.has(b.id)) continue
-      baseUrls.push(b.baseUrl)
+      baseUrls.push(resolved[b.id] ?? placeholderBaseUrl(b))
       apiKeys.push(await resolveKey(effects, b, currentKeyFor(b)))
     }
     for (const p of input.customProviders) {
-      if (KNOWN_BASE_URLS.has(p.baseUrl)) continue
+      if (knownBaseUrls.has(p.baseUrl)) continue
       baseUrls.push(p.baseUrl)
       apiKeys.push(p.apiKey ?? '')
     }
@@ -181,7 +192,9 @@ export const configureBackends = sdk.Action.withInput(
     await webuiConfig.merge(effects, {
       ollama: {
         enable: ollamaOn,
-        base_urls: ollamaOn ? [OLLAMA_BASE_URL] : [],
+        base_urls: ollamaOn
+          ? [resolved['ollama'] ?? placeholderBaseUrl(KNOWN_BY_ID['ollama'])]
+          : [],
       },
       openai: {
         enable: baseUrls.length > 0,

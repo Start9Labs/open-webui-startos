@@ -62,7 +62,7 @@ On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.
 
 | Setting | Value | Purpose |
 |---------|-------|---------|
-| `OLLAMA_BASE_URL` | `http://10.0.3.1:<assigned port>` | Connection to the Ollama service, resolved over the local service bridge (loopback placeholder when Ollama isn't installed) |
+| `OLLAMA_BASE_URL` | `http://10.0.3.1:<assigned port>` | Connection to the Ollama service, resolved over the local service bridge (omitted when Ollama isn't installed) |
 | `WEBUI_SECRET_KEY` | Auto-generated | Session signing key |
 | `CORS_ALLOW_ORIGIN` | `*` | Allow cross-origin requests |
 | `ENABLE_VERSION_UPDATE_CHECK` | `false` | Disable upstream update checks |
@@ -70,7 +70,7 @@ On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.
 | `ENABLE_ADMIN_ANALYTICS` | `false` | Disable analytics |
 | `WEBUI_SESSION_COOKIE_SECURE` | `true` | Secure session cookies |
 | `WEB_SEARCH_ENGINE` | `searxng` | Default web-search backend (only used if web search is turned on) |
-| `SEARXNG_QUERY_URL` | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled, resolved over the local service bridge (loopback placeholder when SearXNG isn't installed) |
+| `SEARXNG_QUERY_URL` | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled, resolved over the local service bridge (omitted when SearXNG isn't installed) |
 
 > Open WebUI treats most of these as `PersistentConfig` values: they're read from the env on first install and saved to the internal database. Subsequent edits via the Open WebUI admin panel override the defaults — changing them via env requires a fresh install or clearing the corresponding DB rows.
 

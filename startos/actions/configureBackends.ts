@@ -5,9 +5,7 @@ import { setDependencies } from '../dependencies'
 import {
   detectInstalled,
   KnownBackend,
-  KNOWN_BY_ID,
   KNOWN_OPENAI,
-  placeholderBaseUrl,
   PLACEHOLDER_API_KEY,
   readPublicApiKey,
   resolveBaseUrls,
@@ -158,8 +156,8 @@ export const configureBackends = sdk.Action.withInput(
     const selected = new Set(input.connectedServices)
     // `.once()`: an action reads the current bridge addresses, it doesn't
     // subscribe. The selectable services are all installed (detectInstalled),
-    // so each resolves to a live address; placeholderBaseUrl guards the
-    // uninstalled-mid-action race.
+    // so each resolves to a live address; a backend uninstalled mid-action
+    // resolves to null and is simply skipped below (no fabricated dial written).
     const resolved = await resolveBaseUrls(effects, 'once')
     const knownBaseUrls = new Set(
       Object.values(resolved).filter((u): u is string => u !== null),
@@ -172,6 +170,7 @@ export const configureBackends = sdk.Action.withInput(
     }
 
     const ollamaOn = selected.has('ollama')
+    const ollamaUrl = resolved['ollama']
 
     // Build the openai lists: selected known OpenAI backends first (in registry
     // order, each with its resolved key), then the user's manual providers.
@@ -180,7 +179,9 @@ export const configureBackends = sdk.Action.withInput(
     const apiKeys: string[] = []
     for (const b of KNOWN_OPENAI) {
       if (!selected.has(b.id)) continue
-      baseUrls.push(resolved[b.id] ?? placeholderBaseUrl(b))
+      const url = resolved[b.id]
+      if (!url) continue
+      baseUrls.push(url)
       apiKeys.push(await resolveKey(effects, b, currentKeyFor(b)))
     }
     for (const p of input.customProviders) {
@@ -192,9 +193,7 @@ export const configureBackends = sdk.Action.withInput(
     await webuiConfig.merge(effects, {
       ollama: {
         enable: ollamaOn,
-        base_urls: ollamaOn
-          ? [resolved['ollama'] ?? placeholderBaseUrl(KNOWN_BY_ID['ollama'])]
-          : [],
+        base_urls: ollamaOn && ollamaUrl ? [ollamaUrl] : [],
       },
       openai: {
         enable: baseUrls.length > 0,

@@ -174,15 +174,6 @@ export async function resolveBaseUrls(
   return out
 }
 
-/**
- * Loopback placeholder written when a backend is absent (its bridge address is
- * null). A dead loopback is just connection-refused — harmless — and the
- * reactive `.const()` heals it once the backend installs.
- */
-export function placeholderBaseUrl(b: KnownBackend): string {
-  return `http://127.0.0.1:${b.internalPort}${b.pathSuffix}`
-}
-
 /** The allowlisted backends currently installed on this StartOS instance. */
 export async function detectInstalled(
   effects: T.Effects,

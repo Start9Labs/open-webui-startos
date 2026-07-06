@@ -4,9 +4,7 @@ import { sdk } from './sdk'
 import { bridgeAddress, mainMounts, uiPort } from './utils'
 import {
   ensurePublicMounted,
-  KNOWN_BY_ID,
   KNOWN_OPENAI,
-  placeholderBaseUrl,
   publicCredentialsFile,
   resolveBaseUrls,
 } from './backends'
@@ -31,8 +29,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const resolved = await resolveBaseUrls(effects, 'const')
 
   // SearXNG web-search endpoint over the bridge, same `.const()` healing. Null
-  // when SearXNG isn't installed; the loopback placeholder below is then a
-  // harmless dead address (search just fails until it's installed).
+  // when SearXNG isn't installed — SEARXNG_QUERY_URL is then omitted below and
+  // web search stays unconfigured until SearXNG installs and main re-runs.
   const searxng = await bridgeAddress(effects, {
     packageId: 'searxng',
     hostId: searxngHostId,
@@ -87,6 +85,13 @@ export const main = sdk.setupMain(async ({ effects }) => {
     })
   }
 
+  // Absent dependency, absent value: omit each dial env var when its bridge
+  // address is null (backend not installed) rather than fabricating a dead
+  // loopback address. The daemon falls back to its own default / web search
+  // stays unconfigured, and the reactive `.const()` above heals with one
+  // restart once the backend installs.
+  const ollamaUrl = resolved['ollama']
+
   return sdk.Daemons.of(effects).addDaemon('primary', {
     subcontainer: sdk.SubContainer.of(
       effects,
@@ -109,14 +114,15 @@ export const main = sdk.setupMain(async ({ effects }) => {
         ENABLE_COMMUNITY_SHARING: 'false',
         ENABLE_ADMIN_ANALYTICS: 'false',
         WEBUI_SESSION_COOKIE_SECURE: 'true',
-        OLLAMA_BASE_URL:
-          resolved['ollama'] ?? placeholderBaseUrl(KNOWN_BY_ID['ollama']),
+        ...(ollamaUrl ? { OLLAMA_BASE_URL: ollamaUrl } : {}),
         ENABLE_OLLAMA_API: 'true',
         ENABLE_OPENAI_API: 'false',
         WEB_SEARCH_ENGINE: 'searxng',
-        SEARXNG_QUERY_URL: `http://${
-          searxng ?? `127.0.0.1:${searxngUiPort}`
-        }/search?q=<query>&format=json`,
+        ...(searxng
+          ? {
+              SEARXNG_QUERY_URL: `http://${searxng}/search?q=<query>&format=json`,
+            }
+          : {}),
       },
     },
     ready: {

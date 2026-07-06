@@ -18,7 +18,7 @@ const providerSpec = InputSpec.of({
   baseUrl: Value.text({
     name: i18n('Base URL'),
     description: i18n(
-      'The OpenAI-compatible API base URL, e.g. http://vllm.startos:8000/v1 or https://api.openai.com/v1',
+      'The OpenAI-compatible API base URL, e.g. https://api.openai.com/v1',
     ),
     required: true,
     default: null,

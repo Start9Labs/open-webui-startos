@@ -8,15 +8,26 @@ import { mainMounts, webuiDb } from './utils'
  * Two-way binding to Open WebUI's own config — its `webui.db` is the
  * single source of truth for backend wiring (Ollama URL, OpenAI-compatible
  * providers, enable flags, web-search engine, etc.). All values we manage
- * are PersistentConfig entries: the daemon reads them from the SQLite
- * `config.data` JSON blob at startup, and the in-app admin UI writes
- * back to that same blob.
+ * are PersistentConfig entries the daemon reads at startup and the in-app
+ * admin UI writes back to.
  *
- * - `read()` returns a Watchable view derived from the JSON blob; the
+ * The `config` table's shape depends on the Open WebUI version, and both are
+ * supported: setupMain's read runs before the daemon's own Alembic migration,
+ * so an upgrade from a pre-0.10 package still hits the old shape once.
+ *   - < 0.10: a single JSON blob row (`config.data`), nested keys.
+ *   - >= 0.10: one row per dotted key (`config.key` / `config.value`), the
+ *     blob's leaves flattened (e.g. `ollama.base_urls`, `openai.api_keys`).
+ * READ_SCRIPT / WRITE_SCRIPT detect which is present and translate to/from
+ * the nested `{ ollama, openai }` object the rest of this module uses, so
+ * `deriveView` / `merge` stay schema-agnostic. Per-key writes upsert only the
+ * keys we manage and leave every other row (ui.*, rag.*, api_configs, …)
+ * untouched.
+ *
+ * - `read()` returns a Watchable view derived from the config; the
  *   produce() loop polls webui.db / -wal mtime and refetches when it
  *   moves, so dep evaluation reacts to admin-UI edits.
- * - `merge()` deep-merges a partial JSON object into config.data and
- *   leaves every other key intact (preserves user tweaks elsewhere).
+ * - `merge()` updates only the keys we pass and leaves every other key
+ *   intact (preserves user tweaks elsewhere).
  *
  * All SQLite IO runs through a temp open-webui SubContainer so the
  * client stack matches the daemon's (same sqlite3 library, same WAL).
@@ -51,29 +62,79 @@ const exists = (path: string): Promise<boolean> =>
     () => false,
   )
 
-const READ_SCRIPT = `import sqlite3, sys
+// Keys we manage, as Open WebUI >= 0.10 stores them: flat dotted rows in the
+// per-key `config` table, reassembled into the nested { ollama, openai }
+// object deriveView/merge expect. Reading only these leaves every other row
+// alone.
+const READ_SCRIPT = `import sqlite3, sys, json
+
+MANAGED = (
+    'ollama.base_urls', 'ollama.enable',
+    'openai.api_base_urls', 'openai.api_keys', 'openai.enable',
+)
+
 conn = sqlite3.connect(sys.argv[1])
 c = conn.cursor()
+out = {}
 try:
-    c.execute('SELECT data FROM config ORDER BY id DESC LIMIT 1')
-    row = c.fetchone()
+    cols = {r[1] for r in c.execute('PRAGMA table_info(config)').fetchall()}
+    if 'key' in cols and 'value' in cols:
+        q = ','.join(['?'] * len(MANAGED))
+        for key, value in c.execute(
+            'SELECT key, value FROM config WHERE key IN (' + q + ')', MANAGED
+        ).fetchall():
+            try:
+                parsed = json.loads(value) if isinstance(value, (str, bytes)) else value
+            except (TypeError, ValueError):
+                continue
+            section, _, field = key.partition('.')
+            out.setdefault(section, {})[field] = parsed
+    elif 'data' in cols:
+        row = c.execute('SELECT data FROM config ORDER BY id DESC LIMIT 1').fetchone()
+        if row and row[0]:
+            out = json.loads(row[0]) if isinstance(row[0], (str, bytes)) else row[0]
 finally:
     conn.close()
-sys.stdout.write(row[0] if row else '{}')
+
+sys.stdout.write(json.dumps(out if isinstance(out, dict) else {}))
 `
 
-const WRITE_SCRIPT = `import sqlite3, sys
-data = sys.stdin.read()
+const WRITE_SCRIPT = `import sqlite3, sys, json, time
+
+data = json.loads(sys.stdin.read() or '{}')
 conn = sqlite3.connect(sys.argv[1])
 c = conn.cursor()
 try:
-    c.execute('SELECT id FROM config ORDER BY id DESC LIMIT 1')
-    row = c.fetchone()
-    if row:
-        c.execute('UPDATE config SET data = ? WHERE id = ?', (data, row[0]))
-    else:
-        c.execute('INSERT INTO config (data, version) VALUES (?, 0)', (data,))
-    conn.commit()
+    cols = {r[1] for r in c.execute('PRAGMA table_info(config)').fetchall()}
+    if 'key' in cols and 'value' in cols:
+        # Open WebUI >= 0.10: upsert only the dotted keys we're given; every
+        # other row is left untouched. Matches models.config.Config.upsert
+        # (JSON-encoded value, epoch updated_at).
+        now = int(time.time())
+        flat = {}
+        for section, fields in data.items():
+            if isinstance(fields, dict):
+                for field, value in fields.items():
+                    flat[section + '.' + field] = value
+            else:
+                flat[section] = fields
+        for key, value in flat.items():
+            vj = json.dumps(value)
+            c.execute('SELECT 1 FROM config WHERE key = ?', (key,))
+            if c.fetchone():
+                c.execute('UPDATE config SET value = ?, updated_at = ? WHERE key = ?', (vj, now, key))
+            else:
+                c.execute('INSERT INTO config (key, value, updated_at) VALUES (?, ?, ?)', (key, vj, now))
+        conn.commit()
+    elif 'data' in cols:
+        # Open WebUI < 0.10: single JSON blob row.
+        blob = json.dumps(data)
+        row = c.execute('SELECT id FROM config ORDER BY id DESC LIMIT 1').fetchone()
+        if row:
+            c.execute('UPDATE config SET data = ? WHERE id = ?', (blob, row[0]))
+        else:
+            c.execute('INSERT INTO config (data, version) VALUES (?, 0)', (blob,))
+        conn.commit()
 finally:
     conn.close()
 `
@@ -244,11 +305,18 @@ class WebuiConfigWatchable extends utils.Watchable<BackendsView> {
 
     while (this.effects.isInContext && !abort.aborted) {
       await new Promise<void>((resolve) => {
-        const t = setTimeout(resolve, POLL_INTERVAL_MS)
-        abort.addEventListener('abort', () => {
-          clearTimeout(t)
+        const onAbort = () => {
+          clearTimeout(timer)
           resolve()
-        })
+        }
+        // Drop the listener when the timer fires, and { once } drops it on
+        // abort — otherwise a fresh abort listener accumulates every poll for
+        // the life of the subscription (MaxListenersExceededWarning after ~10).
+        const timer = setTimeout(() => {
+          abort.removeEventListener('abort', onAbort)
+          resolve()
+        }, POLL_INTERVAL_MS)
+        abort.addEventListener('abort', onAbort, { once: true })
       })
       if (abort.aborted) return
 

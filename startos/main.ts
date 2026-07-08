@@ -115,7 +115,11 @@ export const main = sdk.setupMain(async ({ effects }) => {
         ENABLE_ADMIN_ANALYTICS: 'false',
         WEBUI_SESSION_COOKIE_SECURE: 'true',
         ...(ollamaUrl ? { OLLAMA_BASE_URL: ollamaUrl } : {}),
-        ENABLE_OLLAMA_API: 'true',
+        // Opt-in: seed ollama disabled so it never auto-connects — or declares
+        // a dependency — until the user enables it via Configure Backends, even
+        // once ollama is installed. (Open WebUI defaults ENABLE_OLLAMA_API to
+        // true, so this must be explicit.)
+        ENABLE_OLLAMA_API: 'false',
         ENABLE_OPENAI_API: 'false',
         WEB_SEARCH_ENGINE: 'searxng',
         ...(searxng

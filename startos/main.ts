@@ -90,7 +90,12 @@ export const main = sdk.setupMain(async ({ effects }) => {
         ENABLE_ADMIN_ANALYTICS: 'false',
         WEBUI_SESSION_COOKIE_SECURE: 'true',
         OLLAMA_BASE_URL,
-        ENABLE_OLLAMA_API: 'true',
+        // Optional backend: disabled on first launch so a fresh install never
+        // declares ollama a required (running) dependency when it isn't even
+        // installed. Users opt in via the Configure Backends action, which
+        // enables it and wires base_urls to the resolved address. (Open WebUI
+        // itself defaults ENABLE_OLLAMA_API to true, so this must be explicit.)
+        ENABLE_OLLAMA_API: 'false',
         ENABLE_OPENAI_API: 'false',
         WEB_SEARCH_ENGINE: 'searxng',
         SEARXNG_QUERY_URL:

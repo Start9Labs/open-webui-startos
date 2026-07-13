@@ -6,7 +6,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@start9labs/start-sdk": "2.0.3",
+    "@start9labs/start-sdk": "2.0.5",
     "llama-cpp-startos": "github:Start9Labs/llama-cpp-startos#next",
     "maple-proxy-startos": "github:Start9-Community/maple-proxy-startos#next",
     "ollama-startos": "github:Start9Labs/ollama-startos#next",

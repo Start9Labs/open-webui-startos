@@ -1,6 +1,23 @@
 import * as fs from 'node:fs/promises'
 import { FileHelper, T, z } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
+import { bridgeAddress } from './utils'
+import {
+  apiHostId as ollamaHostId,
+  port as ollamaPort,
+} from 'ollama-startos/startos/utils'
+import {
+  apiHostId as vllmHostId,
+  apiPort as vllmPort,
+} from 'vllm-startos/startos/utils'
+import {
+  apiHostId as llamaCppHostId,
+  apiPort as llamaCppPort,
+} from 'llama-cpp-startos/startos/utils'
+import {
+  apiHostId as mapleHostId,
+  apiPort as maplePort,
+} from 'maple-proxy-startos/startos/utils'
 
 /**
  * Registry of the StartOS AI-backend packages Open WebUI knows how to wire up
@@ -10,11 +27,6 @@ import { sdk } from './sdk'
  * setupMain's key re-sync all derive from it. Adding a new compatible service
  * is a one-line addition here.
  */
-
-export const OLLAMA_BASE_URL = 'http://ollama.startos:11434'
-export const VLLM_BASE_URL = 'http://vllm.startos:8000/v1'
-const LLAMA_CPP_BASE_URL = 'http://llama-cpp.startos:8080/v1'
-const MAPLE_PROXY_BASE_URL = 'http://maple-proxy.startos:8080/v1'
 
 /**
  * Non-empty placeholder for backends that want a key populated but don't
@@ -40,8 +52,16 @@ export type KnownBackend = {
   /** Friendly label shown in the Configure Backends multiselect */
   title: string
   protocol: Protocol
-  /** Internal `.startos` base URL (already includes `/v1` for OpenAI backends) */
-  baseUrl: string
+  /** Dependency host id (its `sdk.MultiHost.of` group) carrying the dialed binding. */
+  hostId: string
+  /** Internal port of the dialed binding (its dep-exported port const). */
+  internalPort: number
+  /**
+   * Suffix appended to the resolved `http://<bridge>:<port>` origin to form the
+   * base URL Open WebUI dials — `''` for Ollama's native API, `/v1` for the
+   * OpenAI-compatible backends.
+   */
+  pathSuffix: string
   /** Dependency version requirement */
   versionRange: string
   /** Health-check id on the dependency that must pass (its daemon id) */
@@ -60,8 +80,10 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     id: 'ollama',
     title: 'Ollama',
     protocol: 'ollama',
-    baseUrl: OLLAMA_BASE_URL,
-    versionRange: '>=0.21.0:0',
+    hostId: ollamaHostId,
+    internalPort: ollamaPort,
+    pathSuffix: '',
+    versionRange: '>=0.31.1:1',
     healthCheck: 'primary',
     keySource: 'none',
     keyRequired: false,
@@ -70,8 +92,10 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     id: 'vllm',
     title: 'vLLM',
     protocol: 'openai',
-    baseUrl: VLLM_BASE_URL,
-    versionRange: '>=0.16.0:0.1',
+    hostId: vllmHostId,
+    internalPort: vllmPort,
+    pathSuffix: '/v1',
+    versionRange: '>=0.23.1-rc.0:10',
     healthCheck: 'primary',
     keySource: 'public',
     keyRequired: true,
@@ -80,13 +104,15 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     id: 'llama-cpp',
     title: 'llama.cpp',
     protocol: 'openai',
-    baseUrl: LLAMA_CPP_BASE_URL,
+    hostId: llamaCppHostId,
+    internalPort: llamaCppPort,
+    pathSuffix: '/v1',
     // Dependency minimum, enforced by setupDependencies (which reads this
     // versionRange). 1.0.9544:0 is llama.cpp's keyless release: it dropped its
     // API key and now authenticates the UI/API at the StartOS proxy, so we
-    // connect keyless over the internal mesh. Bump this whenever a llama.cpp
+    // connect keyless over the service bridge. Bump this whenever a llama.cpp
     // change breaks how we connect.
-    versionRange: '>=1.0.9544:0',
+    versionRange: '>=1.0.9837:1',
     healthCheck: 'primary',
     keySource: 'placeholder',
     keyRequired: false,
@@ -95,8 +121,10 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     id: 'maple-proxy',
     title: 'Maple Proxy',
     protocol: 'openai',
-    baseUrl: MAPLE_PROXY_BASE_URL,
-    versionRange: '>=0.1.8:1',
+    hostId: mapleHostId,
+    internalPort: maplePort,
+    pathSuffix: '/v1',
+    versionRange: '>=0.1.8:2',
     healthCheck: 'maple-proxy',
     keySource: 'placeholder',
     keyRequired: false,
@@ -111,7 +139,40 @@ export const KNOWN_OPENAI = KNOWN_BACKENDS.filter(
   (b) => b.protocol === 'openai',
 )
 
-export const KNOWN_BASE_URLS = new Set(KNOWN_BACKENDS.map((b) => b.baseUrl))
+/** `id → base URL | null` (null when the backend isn't installed). */
+export type ResolvedBaseUrls = Record<string, string | null>
+
+/**
+ * Resolve a known backend's base URL from its binding's live bridge address
+ * (`http://10.0.3.1:<assigned external port><pathSuffix>`), or `null` when the
+ * backend isn't installed. Use mode `'const'` in reactive contexts (main /
+ * setupDependencies) so a backend install/uninstall/port-change heals with a
+ * single restart; `'once'` inside an action.
+ */
+export async function resolveBaseUrl(
+  effects: T.Effects,
+  b: KnownBackend,
+  mode: 'const' | 'once',
+): Promise<string | null> {
+  const addr = await bridgeAddress(effects, {
+    packageId: b.id,
+    hostId: b.hostId,
+    internalPort: b.internalPort,
+  })[mode]()
+  return addr === null ? null : `http://${addr}${b.pathSuffix}`
+}
+
+/** Resolve every known backend's base URL into an `id → url | null` map. */
+export async function resolveBaseUrls(
+  effects: T.Effects,
+  mode: 'const' | 'once',
+): Promise<ResolvedBaseUrls> {
+  const out: ResolvedBaseUrls = {}
+  for (const b of KNOWN_BACKENDS) {
+    out[b.id] = await resolveBaseUrl(effects, b, mode)
+  }
+  return out
+}
 
 /** The allowlisted backends currently installed on this StartOS instance. */
 export async function detectInstalled(

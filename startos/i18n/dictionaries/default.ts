@@ -20,7 +20,7 @@ const dict = {
   'Display Name': 16,
   'A friendly name for this provider (shown in the Open WebUI model picker)': 17,
   'Base URL': 18,
-  'The OpenAI-compatible API base URL, e.g. http://vllm.startos:8000/v1 or https://api.openai.com/v1': 19,
+  'The OpenAI-compatible API base URL, e.g. https://api.openai.com/v1': 19,
   'API Key': 20,
   'API key for this provider. Leave blank if the backend does not require authentication.': 21,
   'Enable vLLM Backend': 22,

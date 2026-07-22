@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises'
 import { T, utils } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
-import { KNOWN_BASE_URLS, KNOWN_OPENAI, OLLAMA_BASE_URL } from './backends'
+import { KNOWN_OPENAI, ResolvedBaseUrls } from './backends'
 import { mainMounts, webuiDb } from './utils'
 
 /**
@@ -239,7 +239,10 @@ function strArr(x: unknown): string[] {
     : []
 }
 
-function deriveView(raw: Record<string, any>): BackendsView {
+function deriveView(
+  raw: Record<string, any>,
+  resolvedBaseUrls: ResolvedBaseUrls,
+): BackendsView {
   const ollama = isPlainObject(raw.ollama) ? raw.ollama : {}
   const openai = isPlainObject(raw.openai) ? raw.openai : {}
   const ollamaUrls = strArr(ollama.base_urls)
@@ -249,16 +252,21 @@ function deriveView(raw: Record<string, any>): BackendsView {
     : []
 
   const connectedIds: string[] = []
-  if ((ollama.enable ?? true) && ollamaUrls.includes(OLLAMA_BASE_URL)) {
+  const ollamaUrl = resolvedBaseUrls['ollama']
+  if (ollamaUrl && (ollama.enable ?? true) && ollamaUrls.includes(ollamaUrl)) {
     connectedIds.push('ollama')
   }
   for (const b of KNOWN_OPENAI) {
-    if (openaiBaseUrls.includes(b.baseUrl)) connectedIds.push(b.id)
+    const url = resolvedBaseUrls[b.id]
+    if (url && openaiBaseUrls.includes(url)) connectedIds.push(b.id)
   }
 
+  const knownBaseUrls = new Set(
+    Object.values(resolvedBaseUrls).filter((u): u is string => u !== null),
+  )
   const customProviders: CustomProvider[] = openaiBaseUrls
     .map((baseUrl, i) => ({ baseUrl, apiKey: openaiApiKeys[i] ?? '' }))
-    .filter((p) => !KNOWN_BASE_URLS.has(p.baseUrl))
+    .filter((p) => !knownBaseUrls.has(p.baseUrl))
 
   return { connectedIds, customProviders, openaiBaseUrls, openaiApiKeys }
 }
@@ -272,8 +280,15 @@ const POLL_INTERVAL_MS = 3000
 class WebuiConfigWatchable extends utils.Watchable<BackendsView> {
   protected readonly label = 'webuiConfig'
 
+  constructor(
+    effects: T.Effects,
+    private readonly resolvedBaseUrls: ResolvedBaseUrls,
+  ) {
+    super(effects)
+  }
+
   protected async fetch(): Promise<BackendsView> {
-    return deriveView(await readRaw(this.effects))
+    return deriveView(await readRaw(this.effects), this.resolvedBaseUrls)
   }
 
   /**
@@ -330,8 +345,11 @@ class WebuiConfigWatchable extends utils.Watchable<BackendsView> {
 }
 
 export const webuiConfig = {
-  read(effects: T.Effects): WebuiConfigWatchable {
-    return new WebuiConfigWatchable(effects)
+  read(
+    effects: T.Effects,
+    resolvedBaseUrls: ResolvedBaseUrls,
+  ): WebuiConfigWatchable {
+    return new WebuiConfigWatchable(effects, resolvedBaseUrls)
   },
 
   /**
@@ -344,9 +362,4 @@ export const webuiConfig = {
     const next = deepMerge(current, partial)
     await writeRaw(effects, next)
   },
-
-  /**
-   * Re-export deriveView for callers that already hold a raw JSON blob.
-   */
-  deriveView,
 }

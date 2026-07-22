@@ -6,13 +6,18 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@start9labs/start-sdk": "1.5.3"
+    "@start9labs/start-sdk": "2.0.6",
+    "llama-cpp-startos": "github:Start9Labs/llama-cpp-startos#next",
+    "maple-proxy-startos": "github:Start9-Community/maple-proxy-startos#next",
+    "ollama-startos": "github:Start9Labs/ollama-startos#next",
+    "searxng-startos": "github:Start9Labs/searxng-startos#next",
+    "vllm-startos": "github:Start9Labs/vllm-startos#next"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
     "@vercel/ncc": "^0.38.4",
     "prettier": "^3.6.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "prettier": {
     "trailingComma": "all",

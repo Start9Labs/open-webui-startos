@@ -5,11 +5,10 @@ import { setDependencies } from '../dependencies'
 import {
   detectInstalled,
   KnownBackend,
-  KNOWN_BASE_URLS,
   KNOWN_OPENAI,
-  OLLAMA_BASE_URL,
   PLACEHOLDER_API_KEY,
   readPublicApiKey,
+  resolveBaseUrls,
 } from '../backends'
 import { adminExists, webuiConfig } from '../webuiConfig'
 
@@ -19,7 +18,7 @@ const providerSpec = InputSpec.of({
   baseUrl: Value.text({
     name: i18n('Base URL'),
     description: i18n(
-      'The OpenAI-compatible API base URL, e.g. http://vllm.startos:8000/v1 or https://api.openai.com/v1',
+      'The OpenAI-compatible API base URL, e.g. https://api.openai.com/v1',
     ),
     required: true,
     default: null,
@@ -130,7 +129,8 @@ export const configureBackends = sdk.Action.withInput(
   inputSpec,
 
   async ({ effects }) => {
-    const view = await webuiConfig.read(effects).once()
+    const resolved = await resolveBaseUrls(effects, 'once')
+    const view = await webuiConfig.read(effects, resolved).once()
     return {
       connectedServices: view.connectedIds,
       customProviders: view.customProviders.map((p) => ({
@@ -154,13 +154,23 @@ export const configureBackends = sdk.Action.withInput(
     }
 
     const selected = new Set(input.connectedServices)
-    const view = await webuiConfig.read(effects).once()
+    // `.once()`: an action reads the current bridge addresses, it doesn't
+    // subscribe. The selectable services are all installed (detectInstalled),
+    // so each resolves to a live address; a backend uninstalled mid-action
+    // resolves to null and is simply skipped below (no fabricated dial written).
+    const resolved = await resolveBaseUrls(effects, 'once')
+    const knownBaseUrls = new Set(
+      Object.values(resolved).filter((u): u is string => u !== null),
+    )
+    const view = await webuiConfig.read(effects, resolved).once()
     const currentKeyFor = (b: KnownBackend): string => {
-      const idx = view.openaiBaseUrls.indexOf(b.baseUrl)
+      const url = resolved[b.id]
+      const idx = url ? view.openaiBaseUrls.indexOf(url) : -1
       return idx >= 0 ? (view.openaiApiKeys[idx] ?? '') : ''
     }
 
     const ollamaOn = selected.has('ollama')
+    const ollamaUrl = resolved['ollama']
 
     // Build the openai lists: selected known OpenAI backends first (in registry
     // order, each with its resolved key), then the user's manual providers.
@@ -169,11 +179,13 @@ export const configureBackends = sdk.Action.withInput(
     const apiKeys: string[] = []
     for (const b of KNOWN_OPENAI) {
       if (!selected.has(b.id)) continue
-      baseUrls.push(b.baseUrl)
+      const url = resolved[b.id]
+      if (!url) continue
+      baseUrls.push(url)
       apiKeys.push(await resolveKey(effects, b, currentKeyFor(b)))
     }
     for (const p of input.customProviders) {
-      if (KNOWN_BASE_URLS.has(p.baseUrl)) continue
+      if (knownBaseUrls.has(p.baseUrl)) continue
       baseUrls.push(p.baseUrl)
       apiKeys.push(p.apiKey ?? '')
     }
@@ -181,7 +193,7 @@ export const configureBackends = sdk.Action.withInput(
     await webuiConfig.merge(effects, {
       ollama: {
         enable: ollamaOn,
-        base_urls: ollamaOn ? [OLLAMA_BASE_URL] : [],
+        base_urls: ollamaOn && ollamaUrl ? [ollamaUrl] : [],
       },
       openai: {
         enable: baseUrls.length > 0,

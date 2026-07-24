@@ -83,7 +83,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     hostId: ollamaHostId,
     internalPort: ollamaPort,
     pathSuffix: '',
-    versionRange: '>=0.31.1:1',
+    versionRange: '>=0.31.2:2',
     healthCheck: 'primary',
     keySource: 'none',
     keyRequired: false,
@@ -95,7 +95,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     hostId: vllmHostId,
     internalPort: vllmPort,
     pathSuffix: '/v1',
-    versionRange: '>=0.23.1-rc.0:10',
+    versionRange: '>=0.23.1-rc.0:13',
     healthCheck: 'primary',
     keySource: 'public',
     keyRequired: true,
@@ -112,7 +112,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     // API key and now authenticates the UI/API at the StartOS proxy, so we
     // connect keyless over the service bridge. Bump this whenever a llama.cpp
     // change breaks how we connect.
-    versionRange: '>=1.0.9837:1',
+    versionRange: '>=1.0.9994:1',
     healthCheck: 'primary',
     keySource: 'placeholder',
     keyRequired: false,
@@ -124,7 +124,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     hostId: mapleHostId,
     internalPort: maplePort,
     pathSuffix: '/v1',
-    versionRange: '>=0.1.8:2',
+    versionRange: '>=0.1.11:1',
     healthCheck: 'maple-proxy',
     keySource: 'placeholder',
     keyRequired: false,

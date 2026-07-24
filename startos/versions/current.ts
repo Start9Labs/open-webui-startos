@@ -1,7 +1,7 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.10.2:2',
+  version: '0.10.2:3',
   releaseNotes: {
     en_US:
       'Internal updates (start-sdk 2.0.x). AI backends and web search now connect over the local service bridge instead of internal DNS; if a previously connected backend shows as disconnected after updating, re-run Configure Backends.',

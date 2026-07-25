@@ -1,7 +1,6 @@
 import * as fs from 'node:fs/promises'
 import { FileHelper, T, z } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
-import {} from './utils'
 import {
   apiHostId as ollamaHostId,
   port as ollamaPort,

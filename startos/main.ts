@@ -1,7 +1,7 @@
 import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
-import { bridgeAddress, mainMounts, uiPort } from './utils'
+import { mainMounts, uiPort } from './utils'
 import {
   ensurePublicMounted,
   KNOWN_OPENAI,
@@ -31,11 +31,14 @@ export const main = sdk.setupMain(async ({ effects }) => {
   // SearXNG web-search endpoint over the bridge, same `.const()` healing. Null
   // when SearXNG isn't installed — SEARXNG_QUERY_URL is then omitted below and
   // web search stays unconfigured until SearXNG installs and main re-runs.
-  const searxng = await bridgeAddress(effects, {
-    packageId: 'searxng',
-    hostId: searxngHostId,
-    internalPort: searxngUiPort,
-  }).const()
+  const searxng = await sdk.host
+    .getBridgeAddress(effects, {
+      packageId: 'searxng',
+      hostId: searxngHostId,
+      internalPort: searxngUiPort,
+      ssl: false,
+    })
+    .const()
 
   // Keep public-credential backends' keys in sync with what the dependency
   // publishes. Read each key with `.once()` (a snapshot, not a subscription):

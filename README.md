@@ -121,15 +121,15 @@ All other configuration is done through the Open WebUI web interface:
 
 All dependencies are **optional** — Open WebUI installs and runs without any of them (you just can't chat until at least one LLM backend is connected). A backend becomes an active running-dependency only when you select it in **Configure Backends**, which calls `setDependencies` so StartOS keeps it running.
 
-Base URLs are resolved over the local service bridge (`10.0.3.1:<assigned external port>`) from each dependency's exported host-id/port consts via `sdk.host.getBridgeAddress` — the internal ports below are the dependency's own bind ports, not the external bridge ports.
+Base URLs are resolved over the local service bridge (`10.0.3.1:<assigned external port>`) from each dependency's exported host-id/port consts via `sdk.host.getBridgeAddress` — the internal ports below are the dependency's own bind ports, not the external bridge ports. Each backend's minimum version is the `versionRange` declared alongside it in `startos/backends.ts`.
 
-| Dependency  | Required | Version Constraint | Health Check  | Internal Port        | Notes                                                                                        |
-| ----------- | -------- | ------------------ | ------------- | -------------------- | -------------------------------------------------------------------------------------------- |
-| Ollama      | Optional | `>=0.21.0:0`       | `primary`     | `11434` (native API) | Local-model backend (Ollama native API); no key                                              |
-| vLLM        | Optional | `>=0.16.0:0.1`     | `primary`     | `8000` (`/v1`)       | OpenAI-compatible; API key read automatically from `vllm:public`                             |
-| llama.cpp   | Optional | `>=1.0.9544:0`     | `primary`     | `8080` (`/v1`)       | OpenAI-compatible; keyless over the service bridge (UI/API auth is at llama.cpp's own proxy) |
-| Maple Proxy | Optional | `>=0.1.8:1`        | `maple-proxy` | `8080` (`/v1`)       | OpenAI-compatible privacy proxy; placeholder key (override in admin panel)                   |
-| SearXNG     | Optional | —                  | —             | `80`                 | Self-hosted web search                                                                       |
+| Dependency  | Required | Health Check  | Internal Port        | Notes                                                                                        |
+| ----------- | -------- | ------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| Ollama      | Optional | `primary`     | `11434` (native API) | Local-model backend (Ollama native API); no key                                              |
+| vLLM        | Optional | `primary`     | `8000` (`/v1`)       | OpenAI-compatible; API key read automatically from `vllm:public`                             |
+| llama.cpp   | Optional | `primary`     | `8080` (`/v1`)       | OpenAI-compatible; keyless over the service bridge (UI/API auth is at llama.cpp's own proxy) |
+| Maple Proxy | Optional | `maple-proxy` | `8080` (`/v1`)       | OpenAI-compatible privacy proxy; placeholder key (override in admin panel)                   |
+| SearXNG     | Optional | —             | `80`                 | Self-hosted web search                                                                       |
 
 SearXNG is the exception to the rule above: it is **not** wired through Configure Backends. Install it, then turn web search on from Open WebUI's own **Admin Panel → Settings → Web Search** (the engine and query URL are pre-filled).
 

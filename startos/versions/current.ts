@@ -1,18 +1,23 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.10.2:3',
+  version: '0.10.2:4',
   releaseNotes: {
-    en_US:
-      'Internal updates (start-sdk 2.0.x). AI backends and web search now connect over the local service bridge instead of internal DNS; if a previously connected backend shows as disconnected after updating, re-run Configure Backends.',
-    es_ES:
-      'Actualizaciones internas (start-sdk 2.0.x). Los backends de IA y la búsqueda web ahora se conectan a través del puente de servicios local en lugar del DNS interno; si un backend conectado anteriormente aparece como desconectado tras la actualización, vuelve a ejecutar Configurar Backends.',
-    de_DE:
-      'Interne Aktualisierungen (start-sdk 2.0.x). KI-Backends und die Websuche verbinden sich jetzt über die lokale Dienst-Bridge statt über internes DNS; falls ein zuvor verbundenes Backend nach dem Update als getrennt angezeigt wird, führen Sie „Backends konfigurieren“ erneut aus.',
-    pl_PL:
-      'Aktualizacje wewnętrzne (start-sdk 2.0.x). Backendy AI i wyszukiwanie w sieci łączą się teraz przez lokalny mostek usług zamiast wewnętrznego DNS; jeśli po aktualizacji wcześniej połączony backend jest wyświetlany jako rozłączony, uruchom ponownie Konfiguruj backendy.',
-    fr_FR:
-      'Mises à jour internes (start-sdk 2.0.x). Les backends IA et la recherche web se connectent désormais via le pont de services local au lieu du DNS interne ; si un backend précédemment connecté apparaît déconnecté après la mise à jour, relancez « Configurer les backends ».',
+    en_US: `Resolves the addresses of connected services more reliably.
+
+Open WebUI looked up where to reach its dependencies through a field that only applies to one of the two ways a service can publish a port. It now reads the address itself, so a dependency changing how it serves TLS can no longer leave Open WebUI unable to find it. Nothing changes in normal operation.`,
+    es_ES: `Resuelve de forma más fiable las direcciones de los servicios conectados.
+
+Open WebUI localizaba sus dependencias mediante un campo que solo se aplica a una de las dos formas en que un servicio puede publicar un puerto. Ahora lee la dirección en sí, de modo que si una dependencia cambia su forma de servir TLS, Open WebUI seguirá encontrándola. En funcionamiento normal no cambia nada.`,
+    de_DE: `Ermittelt die Adressen verbundener Dienste zuverlässiger.
+
+Open WebUI suchte seine Abhängigkeiten über ein Feld, das nur für eine der beiden Arten gilt, auf die ein Dienst einen Port veröffentlichen kann. Jetzt wird die Adresse selbst gelesen, sodass eine Abhängigkeit, die ihre TLS-Bereitstellung ändert, für Open WebUI auffindbar bleibt. Im normalen Betrieb ändert sich nichts.`,
+    pl_PL: `Pewniej ustala adresy połączonych usług.
+
+Open WebUI wyszukiwał swoje zależności przez pole, które dotyczy tylko jednego z dwóch sposobów publikowania portu przez usługę. Teraz odczytuje sam adres, więc zależność zmieniająca sposób udostępniania TLS nadal pozostanie odnajdywalna dla Open WebUI. W normalnej pracy nic się nie zmienia.`,
+    fr_FR: `Détermine plus fiablement les adresses des services connectés.
+
+Open WebUI localisait ses dépendances via un champ qui ne s'applique qu'à l'un des deux modes de publication d'un port par un service. Il lit désormais l'adresse elle-même : une dépendance qui change sa façon de servir TLS reste donc trouvable par Open WebUI. Rien ne change en fonctionnement normal.`,
   },
   migrations: {
     up: async ({ effects }) => {},

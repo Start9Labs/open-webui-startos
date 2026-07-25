@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises'
 import { FileHelper, T, z } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
-import { bridgeAddress } from './utils'
+import {} from './utils'
 import {
   apiHostId as ollamaHostId,
   port as ollamaPort,
@@ -154,11 +154,14 @@ export async function resolveBaseUrl(
   b: KnownBackend,
   mode: 'const' | 'once',
 ): Promise<string | null> {
-  const addr = await bridgeAddress(effects, {
-    packageId: b.id,
-    hostId: b.hostId,
-    internalPort: b.internalPort,
-  })[mode]()
+  const addr = await sdk.host
+    .getBridgeAddress(effects, {
+      packageId: b.id,
+      hostId: b.hostId,
+      internalPort: b.internalPort,
+      ssl: false,
+    })
+    [mode]()
   return addr === null ? null : `http://${addr}${b.pathSuffix}`
 }
 

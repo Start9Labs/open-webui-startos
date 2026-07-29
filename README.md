@@ -72,14 +72,14 @@ On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.
 | `WEB_SEARCH_ENGINE`           | `searxng`                                                      | Default web-search backend (only used if web search is turned on)                                                                     |
 | `SEARXNG_QUERY_URL`           | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled, resolved over the local service bridge (omitted when SearXNG isn't installed) |
 
-> Open WebUI treats most of these as `PersistentConfig` values: they're read from the env on first install and saved to the internal database. Subsequent edits via the Open WebUI admin panel override the defaults — changing them via env requires a fresh install or clearing the corresponding DB rows.
+> Open WebUI treats most of these as `PersistentConfig` values: they're read from the env on first install and saved to the internal database. Subsequent edits via Open WebUI's admin settings override the defaults — changing them via env requires a fresh install or clearing the corresponding DB rows.
 
 ### Enabling Web Search (SearXNG)
 
 Web search is **off by default**. To turn it on:
 
 1. Install the optional [SearXNG](https://github.com/Start9Labs/searxng-startos) package on the same StartOS server.
-2. In Open WebUI, go to **Admin Panel → Settings → Web Search** and toggle web search on. The engine (`searxng`) and query URL are pre-filled.
+2. In Open WebUI, open **Settings → Web Search** (under the **Admin** section) and toggle web search on. The engine (`searxng`) and query URL are pre-filled.
 
 The pre-filled URL hits SearXNG's JSON API directly over the local StartOS service bridge (`10.0.3.1:<assigned port>`, resolved reactively from SearXNG's binding). No public exposure is required.
 
@@ -128,10 +128,10 @@ Base URLs are resolved over the local service bridge (`10.0.3.1:<assigned extern
 | Ollama      | Optional | `primary`     | `11434` (native API) | Local-model backend (Ollama native API); no key                                              |
 | vLLM        | Optional | `primary`     | `8000` (`/v1`)       | OpenAI-compatible; API key read automatically from `vllm:public`                             |
 | llama.cpp   | Optional | `primary`     | `8080` (`/v1`)       | OpenAI-compatible; keyless over the service bridge (UI/API auth is at llama.cpp's own proxy) |
-| Maple Proxy | Optional | `maple-proxy` | `8080` (`/v1`)       | OpenAI-compatible privacy proxy; placeholder key (override in admin panel)                   |
+| Maple Proxy | Optional | `maple-proxy` | `8080` (`/v1`)       | OpenAI-compatible privacy proxy; placeholder key (override in admin settings)                |
 | SearXNG     | Optional | —             | `80`                 | Self-hosted web search                                                                       |
 
-SearXNG is the exception to the rule above: it is **not** wired through Configure Backends. Install it, then turn web search on from Open WebUI's own **Admin Panel → Settings → Web Search** (the engine and query URL are pre-filled).
+SearXNG is the exception to the rule above: it is **not** wired through Configure Backends. Install it, then turn web search on from Open WebUI's own **Settings → Web Search**, under the **Admin** section (the engine and query URL are pre-filled).
 
 ## Backups and Restore
 
@@ -157,7 +157,7 @@ The extended grace period accounts for Open WebUI's initialization time.
 
 1. **A backend is needed to chat**: Open WebUI installs and runs on its own, but you must connect at least one LLM backend (via **Configure Backends** or an external OpenAI-compatible provider) before you can chat.
 2. **Configure Backends ordering**: The action refuses to run until you've opened the Web UI and created the first admin account — this prevents a database-corruption failure mode (issue #15).
-3. **Maple Proxy API key**: Open WebUI can't read Maple Proxy's key automatically, so it seeds a non-empty placeholder. If your Maple Proxy enforces a key, replace the placeholder in Open WebUI's admin panel.
+3. **Maple Proxy API key**: Open WebUI can't read Maple Proxy's key automatically, so it seeds a non-empty placeholder. If your Maple Proxy enforces a key, replace the placeholder in Open WebUI's admin settings.
 4. **No GPU acceleration for Open WebUI itself**: Inference runs in the backend services; large models may be slow depending on hardware.
 
 ## What Is Unchanged from Upstream
@@ -197,7 +197,7 @@ dependencies: # all optional; registered as running-deps when selected in Config
   - vllm # port 8000 /v1 (key auto-read from vllm:public)
   - llama-cpp # port 8080 /v1 (keyless over the service bridge)
   - maple-proxy # port 8080 /v1 (placeholder key)
-  - searxng # port 80 (web search; enabled in admin panel, not Configure Backends)
+  - searxng # port 80 (web search; enabled in Open WebUI's admin settings, not Configure Backends)
 startos_managed_env_vars:
   - OLLAMA_BASE_URL
   - WEBUI_SECRET_KEY

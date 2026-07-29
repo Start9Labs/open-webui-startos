@@ -2,7 +2,7 @@
 
 ## Documentation
 
-- [Open WebUI documentation](https://docs.openwebui.com/) — the upstream user and operator guide covering models, RAG, integrations, and the admin panel.
+- [Open WebUI documentation](https://docs.openwebui.com/) — the upstream user and operator guide covering models, RAG, integrations, and the admin settings.
 
 ## What you get on StartOS
 
@@ -18,13 +18,13 @@
 3. Run the **Configure Backends** action:
    - Under **Connect detected services**, check the StartOS AI services you want to use. Their internal URL is filled in automatically, along with the API key wherever Open WebUI can read it (Ollama and llama.cpp need none over the internal network; vLLM publishes its key). Maple Proxy gets a placeholder key — if you've set a Maple API key, replace it in Open WebUI afterwards.
    - Under **OpenAI-Compatible Providers**, add a row for each external endpoint: a base URL (e.g. `https://api.openai.com/v1`) and an optional API key.
-4. (Optional) To enable web search, install **SearXNG**, then in Open WebUI open **Admin Panel → Settings → Web Search** and turn web search on. The engine and query URL are pre-filled.
+4. (Optional) To enable web search, install **SearXNG**, then in Open WebUI open **Settings → Web Search** (under the **Admin** section) and turn web search on. The engine and query URL are pre-filled.
 
 ## Using Open WebUI
 
 ### Web UI
 
-The **Web UI** is where users sign in, chat with models, upload documents, and where the admin manages users and global settings from the **Admin Panel**. Upstream documentation covers the full feature set; everything you'd configure in a standalone Open WebUI install is configured here the same way.
+The **Web UI** is where users sign in, chat with models, upload documents, and where the admin manages users from the **Admin Panel** and global settings from the **Admin** section of **Settings**. Upstream documentation covers the full feature set; everything you'd configure in a standalone Open WebUI install is configured here the same way.
 
 ### Actions
 

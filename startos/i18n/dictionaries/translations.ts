@@ -32,6 +32,7 @@ export default {
     27: 'modelos locales',
     28: 'Open WebUI aún no se ha configurado. Inicia el servicio, abre la interfaz web y registra la primera cuenta (que se convierte en administradora) antes de configurar los backends.',
     29: 'Open WebUI aún no se ha configurado. Inicia el servicio, abre la interfaz web y registra la primera cuenta (que se convierte en administradora) antes de restablecer la contraseña.',
+    30: 'Se ha reapuntado la búsqueda web a SearXNG',
   },
   de_DE: {
     0: 'Open WebUI wird gestartet!',
@@ -64,6 +65,7 @@ export default {
     27: 'lokale Modelle',
     28: 'Open WebUI wurde noch nicht eingerichtet. Starte den Dienst, öffne die Weboberfläche und registriere das erste Konto (das zum Admin wird), bevor du die Backends konfigurierst.',
     29: 'Open WebUI wurde noch nicht eingerichtet. Starte den Dienst, öffne die Weboberfläche und registriere das erste Konto (das zum Admin wird), bevor du das Passwort zurücksetzt.',
+    30: 'Die Websuche wurde neu auf SearXNG ausgerichtet',
   },
   pl_PL: {
     0: 'Uruchamianie Open WebUI!',
@@ -96,6 +98,7 @@ export default {
     27: 'modele lokalne',
     28: 'Open WebUI nie zostało jeszcze skonfigurowane. Uruchom usługę, otwórz interfejs webowy i zarejestruj pierwsze konto (które stanie się administratorem) przed skonfigurowaniem backendów.',
     29: 'Open WebUI nie zostało jeszcze skonfigurowane. Uruchom usługę, otwórz interfejs webowy i zarejestruj pierwsze konto (które stanie się administratorem) przed zresetowaniem hasła.',
+    30: 'Wyszukiwanie w sieci zostało ponownie skierowane na SearXNG',
   },
   fr_FR: {
     0: "Démarrage d'Open WebUI !",
@@ -128,5 +131,6 @@ export default {
     27: 'modèles locaux',
     28: "Open WebUI n'a pas encore été configuré. Démarrez le service, ouvrez l'interface web et enregistrez le premier compte (qui devient administrateur) avant de configurer les backends.",
     29: "Open WebUI n'a pas encore été configuré. Démarrez le service, ouvrez l'interface web et enregistrez le premier compte (qui devient administrateur) avant de réinitialiser le mot de passe.",
+    30: 'La recherche web a été redirigée vers SearXNG',
   },
 } satisfies Record<string, LangDict>

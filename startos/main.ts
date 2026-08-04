@@ -8,7 +8,12 @@ import {
   publicCredentialsFile,
   resolveBaseUrls,
 } from './backends'
-import { adminExists, webuiConfig } from './webuiConfig'
+import {
+  adminExists,
+  healSearxngQueryUrl,
+  searxngQueryUrl,
+  webuiConfig,
+} from './webuiConfig'
 import { uiPort as searxngUiPort } from 'searxng-startos/startos/utils'
 import { mainHostId as searxngHostId } from 'searxng-startos/startos/interfaces'
 
@@ -88,6 +93,18 @@ export const main = sdk.setupMain(async ({ effects }) => {
     })
   }
 
+  // Seeding SEARXNG_QUERY_URL below only lands if Open WebUI has never launched
+  // before — its first start persists every config key and the stored row wins
+  // from then on. Install Open WebUI first (the usual order) and web search is
+  // pinned to an empty endpoint no restart can fix, so repair the row directly.
+  // Runs before the daemon starts, since that's when Open WebUI reads config.
+  if (
+    searxng &&
+    (await healSearxngQueryUrl(effects, view.searxngQueryUrl, searxng))
+  ) {
+    console.info(i18n('Repointed web search at SearXNG'))
+  }
+
   // Absent dependency, absent value: omit each dial env var when its bridge
   // address is null (backend not installed) rather than fabricating a dead
   // loopback address. The daemon falls back to its own default / web search
@@ -125,11 +142,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
         ENABLE_OLLAMA_API: 'false',
         ENABLE_OPENAI_API: 'false',
         WEB_SEARCH_ENGINE: 'searxng',
-        ...(searxng
-          ? {
-              SEARXNG_QUERY_URL: `http://${searxng}/search?q=<query>&format=json`,
-            }
-          : {}),
+        ...(searxng ? { SEARXNG_QUERY_URL: searxngQueryUrl(searxng) } : {}),
       },
     },
     ready: {

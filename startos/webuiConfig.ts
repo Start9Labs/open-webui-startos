@@ -52,6 +52,11 @@ export type BackendsView = {
    */
   openaiBaseUrls: string[]
   openaiApiKeys: string[]
+  /**
+   * The persisted web-search endpoint, or `null` when no row for it exists yet.
+   * `null` and `''` are deliberately distinct — see `persistedSearxngQueryUrl`.
+   */
+  searxngQueryUrl: string | null
 }
 
 const dbHostPath = (): string => sdk.volumes['open-webui'].subpath('webui.db')
@@ -71,6 +76,10 @@ const READ_SCRIPT = `import sqlite3, sys, json
 MANAGED = (
     'ollama.base_urls', 'ollama.enable',
     'openai.api_base_urls', 'openai.api_keys', 'openai.enable',
+    # Web-search endpoint. Open WebUI 0.11 renames the 'rag.web.' key prefix to
+    # 'web.' at startup, so both spellings are read — setupMain runs before that
+    # rename and sees whichever the installed daemon last wrote.
+    'web.search.searxng_query_url', 'rag.web.search.searxng_query_url',
 )
 
 conn = sqlite3.connect(sys.argv[1])
@@ -135,6 +144,42 @@ try:
         else:
             c.execute('INSERT INTO config (data, version) VALUES (?, 0)', (blob,))
         conn.commit()
+finally:
+    conn.close()
+`
+
+// Repoint the persisted web-search endpoint, in whichever shape the database
+// currently uses. UPDATE only, never INSERT: no row means the daemon has yet to
+// seed the key and will take it from SEARXNG_QUERY_URL on the launch we're
+// preparing, and inserting config rows into a pre-onboarding database is what
+// broke issue #15. An UPDATE against a key that isn't there is a no-op, so both
+// per-key spellings can be issued unconditionally.
+const SEARXNG_URL_WRITE_SCRIPT = `import sqlite3, sys, json, time
+
+url = sys.stdin.read()
+conn = sqlite3.connect(sys.argv[1])
+c = conn.cursor()
+try:
+    cols = {r[1] for r in c.execute('PRAGMA table_info(config)').fetchall()}
+    if 'key' in cols and 'value' in cols:
+        now = int(time.time())
+        for key in ('web.search.searxng_query_url', 'rag.web.search.searxng_query_url'):
+            c.execute(
+                'UPDATE config SET value = ?, updated_at = ? WHERE key = ?',
+                (json.dumps(url), now, key),
+            )
+        conn.commit()
+    elif 'data' in cols:
+        row = c.execute('SELECT id, data FROM config ORDER BY id DESC LIMIT 1').fetchone()
+        if row and row[1]:
+            blob = json.loads(row[1]) if isinstance(row[1], (str, bytes)) else row[1]
+            node = blob if isinstance(blob, dict) else None
+            for part in ('rag', 'web', 'search'):
+                node = node.get(part) if isinstance(node, dict) else None
+            if isinstance(node, dict) and 'searxng_query_url' in node:
+                node['searxng_query_url'] = url
+                c.execute('UPDATE config SET data = ? WHERE id = ?', (json.dumps(blob), row[0]))
+                conn.commit()
 finally:
     conn.close()
 `
@@ -214,6 +259,70 @@ export async function adminExists(effects: T.Effects): Promise<boolean> {
   return stdout.trim() === 'admin'
 }
 
+/**
+ * The web-search endpoint Open WebUI dials for a given SearXNG bridge address.
+ * Single source of truth for the URL's shape: setupMain seeds it as
+ * `SEARXNG_QUERY_URL` and `healSearxngQueryUrl` writes the same string, so the
+ * two can never drift. `<query>` is Open WebUI's own substitution placeholder.
+ */
+export const searxngQueryUrl = (bridgeAddress: string): string =>
+  `http://${bridgeAddress}/search?q=<query>&format=json`
+
+/**
+ * Whether a persisted endpoint is one this package is responsible for: unset,
+ * or pointing at the same bridge host we resolve SearXNG on — i.e. a value we
+ * wrote whose assigned port has since moved. Anything else (an off-box SearXNG,
+ * a hand-edited endpoint) belongs to the user and is left alone.
+ */
+function isManagedQueryUrl(persisted: string, bridgeAddress: string): boolean {
+  if (persisted === '') return true
+  try {
+    return (
+      new URL(persisted).hostname ===
+      new URL(`http://${bridgeAddress}`).hostname
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Repoint the persisted web-search endpoint at SearXNG's current bridge
+ * address, returning whether a write was needed.
+ *
+ * Open WebUI seeds every config key into `webui.db` on its first launch, and
+ * from then on the stored row wins over the environment — `Config.seed_defaults`
+ * in `open_webui/models/config.py`: "Insert keys that don't yet exist in the DB
+ * … Existing DB values take precedence over defaults." A server that started
+ * Open WebUI once before installing SearXNG therefore has an empty endpoint
+ * pinned for good, and no restart, reinstall or env var can dislodge it. Seeding
+ * `SEARXNG_QUERY_URL` is only correct for the install-SearXNG-first order; this
+ * repairs every other one, and re-heals when the assigned bridge port moves.
+ *
+ * Call before starting the daemon — Open WebUI reads its config at startup.
+ */
+export async function healSearxngQueryUrl(
+  effects: T.Effects,
+  persisted: string | null,
+  bridgeAddress: string,
+): Promise<boolean> {
+  if (persisted === null) return false
+  const wanted = searxngQueryUrl(bridgeAddress)
+  if (persisted === wanted) return false
+  if (!isManagedQueryUrl(persisted, bridgeAddress)) return false
+  await sdk.SubContainer.withTemp(
+    effects,
+    { imageId: 'open-webui' },
+    mainMounts,
+    'webui-searxng-url-write',
+    (subc) =>
+      subc.execFail(['python3', '-c', SEARXNG_URL_WRITE_SCRIPT, webuiDb], {
+        input: wanted,
+      }),
+  )
+  return true
+}
+
 function isPlainObject(x: unknown): x is Record<string, any> {
   return typeof x === 'object' && x !== null && !Array.isArray(x)
 }
@@ -237,6 +346,33 @@ function strArr(x: unknown): string[] {
   return Array.isArray(x)
     ? x.filter((s): s is string => typeof s === 'string')
     : []
+}
+
+/**
+ * The persisted web-search endpoint, read from whichever of the three storage
+ * shapes across the supported upgrade range is present:
+ *   - `web.search.searxng_query_url` — per-key table, Open WebUI >= 0.11
+ *   - `rag.web.search.searxng_query_url` — per-key table, 0.10.x (0.11 renames
+ *     the prefix at startup, after setupMain has already read)
+ *   - `rag.web.search.searxng_query_url` — nested in the < 0.10 config blob
+ *
+ * `null` (no row) and `''` (a row holding an empty value) mean different things
+ * and must not be collapsed: with no row the daemon still seeds the key from
+ * `SEARXNG_QUERY_URL`, whereas an empty row shadows that env var permanently.
+ */
+function persistedSearxngQueryUrl(raw: Record<string, any>): string | null {
+  const web = isPlainObject(raw.web) ? raw.web : {}
+  const rag = isPlainObject(raw.rag) ? raw.rag : {}
+  const ragWeb = isPlainObject(rag.web) ? rag.web : {}
+  const ragWebSearch = isPlainObject(ragWeb.search) ? ragWeb.search : {}
+  for (const candidate of [
+    web['search.searxng_query_url'],
+    rag['web.search.searxng_query_url'],
+    ragWebSearch['searxng_query_url'],
+  ]) {
+    if (typeof candidate === 'string') return candidate
+  }
+  return null
 }
 
 function deriveView(
@@ -268,7 +404,13 @@ function deriveView(
     .map((baseUrl, i) => ({ baseUrl, apiKey: openaiApiKeys[i] ?? '' }))
     .filter((p) => !knownBaseUrls.has(p.baseUrl))
 
-  return { connectedIds, customProviders, openaiBaseUrls, openaiApiKeys }
+  return {
+    connectedIds,
+    customProviders,
+    openaiBaseUrls,
+    openaiApiKeys,
+    searxngQueryUrl: persistedSearxngQueryUrl(raw),
+  }
 }
 
 // Poll cadence for the webui.db change watcher. SQLite WAL writes update

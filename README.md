@@ -72,16 +72,27 @@ On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.
 | `WEB_SEARCH_ENGINE`           | `searxng`                                                      | Default web-search backend (only used if web search is turned on)                                                                     |
 | `SEARXNG_QUERY_URL`           | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled, resolved over the local service bridge (omitted when SearXNG isn't installed) |
 
-> Open WebUI treats most of these as `PersistentConfig` values: they're read from the env on first install and saved to the internal database. Subsequent edits via Open WebUI's admin settings override the defaults — changing them via env requires a fresh install or clearing the corresponding DB rows.
+> Open WebUI treats most of these as `PersistentConfig` values: they're read from the env on first install and saved to the internal database. Subsequent edits via Open WebUI's admin settings override the defaults — changing them via env requires a fresh install or clearing the corresponding DB rows. `SEARXNG_QUERY_URL` is the exception: `setupMain` repairs its stored row directly (see below).
 
 ### Enabling Web Search (SearXNG)
 
 Web search is **off by default**. To turn it on:
 
 1. Install the optional [SearXNG](https://github.com/Start9Labs/searxng-startos) package on the same StartOS server.
-2. In Open WebUI, open **Settings → Web Search** (under the **Admin** section) and toggle web search on. The engine (`searxng`) and query URL are pre-filled.
+2. In Open WebUI, open **Settings → Web Search** (under the **Admin** section) and toggle web search on. The engine (`searxng`) and query URL are filled in already.
 
-The pre-filled URL hits SearXNG's JSON API directly over the local StartOS service bridge (`10.0.3.1:<assigned port>`, resolved reactively from SearXNG's binding). No public exposure is required.
+The query URL hits SearXNG's JSON API directly over the local StartOS service bridge (`10.0.3.1:<assigned port>`, resolved reactively from SearXNG's binding). No public exposure is required.
+
+#### Why the URL is repaired rather than just seeded
+
+`SEARXNG_QUERY_URL` alone only works when SearXNG is installed **before** Open WebUI's first launch. Open WebUI seeds every config key into `webui.db` the first time it starts and the stored row wins over the environment from then on — `Config.seed_defaults` in `open_webui/models/config.py`: _"Insert keys that don't yet exist in the DB … Existing DB values take precedence over defaults."_ Install SearXNG afterwards and the endpoint stays pinned at `""`, which no restart, reinstall or env var can dislodge.
+
+So `setupMain` calls `healSearxngQueryUrl` (`startos/webuiConfig.ts`) before starting the daemon, rewriting the stored endpoint when it is empty or points at a stale bridge port. Two properties keep it safe:
+
+- **Update-only, never insert.** No row means the daemon hasn't seeded the key yet and will take it from the env var on the launch being prepared. This also keeps the write off a pre-onboarding database (issue #15), which is why it needs no `adminExists` gate.
+- **Only endpoints on our own bridge host are touched.** A URL pointing anywhere else is a deliberate user choice — an off-box SearXNG, a hand-edited endpoint — and is left alone.
+
+The value is read back through the same view as the backend keys, across all three shapes the supported upgrade range can present: `web.search.searxng_query_url` (Open WebUI >= 0.11), `rag.web.search.searxng_query_url` (0.10.x, before 0.11's startup rename), and the same dotted path nested inside the pre-0.10 config blob.
 
 ### User-Configurable Settings
 
@@ -131,7 +142,7 @@ Base URLs are resolved over the local service bridge (`10.0.3.1:<assigned extern
 | Maple Proxy | Optional | `maple-proxy` | `8080` (`/v1`)       | OpenAI-compatible privacy proxy; placeholder key (override in admin settings)                |
 | SearXNG     | Optional | —             | `80`                 | Self-hosted web search                                                                       |
 
-SearXNG is the exception to the rule above: it is **not** wired through Configure Backends. Install it, then turn web search on from Open WebUI's own **Settings → Web Search**, under the **Admin** section (the engine and query URL are pre-filled).
+SearXNG is the exception to the rule above: it is **not** wired through Configure Backends. Install it, then turn web search on from Open WebUI's own **Settings → Web Search**, under the **Admin** section (the engine and query URL are filled in already, in either install order — see [Enabling Web Search](#enabling-web-search-searxng)).
 
 ## Backups and Restore
 

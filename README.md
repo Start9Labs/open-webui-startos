@@ -52,36 +52,61 @@
 
 ## Installation and First-Run Flow
 
-On install, StartOS auto-generates a `WEBUI_SECRET_KEY` and stores it in `store.json`. The app is ready to use immediately.
+Install runs three steps before the service is ever started normally (`startos/init/bootstrap.ts`):
 
-**Order matters:** open the **Web UI** and register your admin account _before_ running **Configure Backends**. Open WebUI creates its SQLite schema (and the admin user) on first launch; the Configure Backends action refuses to run until an admin exists, because writing backend config into a not-yet-initialized database corrupts it. Once the admin is created, run **Configure Backends** to connect your LLM backends.
+1. **Seed the model cache.** The image bakes 265 MB of models into `/app/backend/data/cache` — the two text-embedding models used for document search (`all-MiniLM-L6-v2`, `TaylorAI/bge-micro-v2`), Whisper for audio transcription, and the tiktoken vocabularies. That directory is the *only* thing in `/app/backend/data` in the image, and it is exactly where the `open-webui` volume is mounted at runtime, so the mount hides all of it and the models are re-fetched from HuggingFace on demand. The cache is copied onto the volume first, with `cp -n` so nothing the user has since downloaded is overwritten.
+
+   This does not make the box fully independent of HuggingFace. `sentence_transformers` resolves the embedding repo's `main` revision and pulls a 30-file snapshot — more formats than the image bakes — so the **install** boot below completes that download (measured: ~800 MB on top of the copied blobs, ~11 s on a warm link). What the copy buys is that Whisper and tiktoken, which load lazily on first use and are *not* covered by that boot, are already present; and that every start after install resolves all 30 files from cache instantly rather than downloading anything.
+2. **Generate `WEBUI_SECRET_KEY`** into `store.json`.
+3. **Boot Open WebUI once, to completion, then shut it down** (`runUntilSuccess`). This is the only thing that creates `webui.db` and its schema: Alembic runs at import and the config table is seeded immediately afterwards. Doing it here means every later config write can assume the table exists, so no other code carries first-run branching. If it fails or times out, init fails and StartOS rolls the install back.
+
+Once install finishes, the managed config values are written to `webui.db` and the app is ready to use.
+
+**Order still matters for backends:** open the **Web UI** and register your admin account _before_ running **Configure Backends** — the action refuses to run until an admin exists (issue #15).
 
 ## Configuration Management
 
-### Auto-Configured Settings
+Open WebUI has two kinds of setting, and this package treats them differently.
 
-| Setting                       | Value                                                          | Purpose                                                                                                                               |
-| ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `OLLAMA_BASE_URL`             | `http://10.0.3.1:<assigned port>`                              | Connection to the Ollama service, resolved over the local service bridge (omitted when Ollama isn't installed)                        |
-| `WEBUI_SECRET_KEY`            | Auto-generated                                                 | Session signing key                                                                                                                   |
-| `CORS_ALLOW_ORIGIN`           | `*`                                                            | Allow cross-origin requests                                                                                                           |
-| `ENABLE_VERSION_UPDATE_CHECK` | `false`                                                        | Disable upstream update checks                                                                                                        |
-| `ENABLE_COMMUNITY_SHARING`    | `false`                                                        | Disable community sharing                                                                                                             |
-| `ENABLE_ADMIN_ANALYTICS`      | `false`                                                        | Disable analytics                                                                                                                     |
-| `WEBUI_SESSION_COOKIE_SECURE` | `true`                                                         | Secure session cookies                                                                                                                |
-| `WEB_SEARCH_ENGINE`           | `searxng`                                                      | Default web-search backend (only used if web search is turned on)                                                                     |
-| `SEARXNG_QUERY_URL`           | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled, resolved over the local service bridge (omitted when SearXNG isn't installed) |
+### Environment (read on every start)
 
-> Open WebUI treats most of these as `PersistentConfig` values: they're read from the env on first install and saved to the internal database. Subsequent edits via Open WebUI's admin settings override the defaults — changing them via env requires a fresh install or clearing the corresponding DB rows.
+These are plain environment variables that Open WebUI re-reads each launch, so setting them here is authoritative. They live in `daemonEnv` (`startos/utils.ts`).
+
+| Variable                      | Value          | Purpose                        |
+| ----------------------------- | -------------- | ------------------------------ |
+| `WEBUI_SECRET_KEY`            | Auto-generated | Session signing key            |
+| `CORS_ALLOW_ORIGIN`           | `*`            | Allow cross-origin requests    |
+| `ENABLE_VERSION_UPDATE_CHECK` | `false`        | Disable upstream update checks |
+| `ENABLE_ADMIN_ANALYTICS`      | `false`        | Disable analytics              |
+| `WEBUI_SESSION_COOKIE_SECURE` | `true`         | Secure session cookies         |
+
+### Managed config (written to `webui.db`)
+
+Everything else Open WebUI calls `PersistentConfig` lives in the `config` table of `webui.db`. **Since Open WebUI 0.10 the environment only seeds such a key when it has no row yet** (`Config.seed_defaults` — _"Insert keys that don't yet exist in the DB … Existing DB values take precedence over defaults"_). After a key's first launch the stored row wins for good, whether or not the user ever edited it — so an env var is a one-shot seed, never an override. This package therefore writes these values to the database directly (`startos/managedConfig.ts`), under one of two policies:
+
+| Key                            | Policy     | Value                                                          | Purpose                                                            |
+| ------------------------------ | ---------- | -------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `ollama.enable`                | seed       | `false`                                                        | Keep Ollama opt-in until Configure Backends turns it on            |
+| `openai.enable`                | seed       | `false`                                                        | Keep OpenAI-compatible backends opt-in                             |
+| `ui.enable_community_sharing`  | seed       | `false`                                                        | Disable community sharing                                          |
+| `web.search.engine`            | seed       | `searxng`                                                      | Default web-search backend (only used if web search is turned on)  |
+| `web.search.searxng_query_url` | reconciled | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled             |
+
+- **seed** — written once, during install, and never asserted again. A starting point the user owns from then on.
+- **reconciled** — re-asserted on every start by `setupMain`, before the daemon launches, because the correct value can change under the user: a dependency installed after Open WebUI's first launch, or an assigned bridge port that moves. A value the user has changed is never overwritten — the last value this package wrote is recorded in `store.json`, and anything that doesn't match it (and isn't empty) is left alone permanently.
+
+The backend connection keys (`ollama.base_urls`, `openai.api_base_urls`, `openai.api_keys`) are written by the Configure Backends action rather than by either policy; they are the obvious next candidates for `reconciled`, which would also heal a backend whose bridge port moved.
 
 ### Enabling Web Search (SearXNG)
 
 Web search is **off by default**. To turn it on:
 
 1. Install the optional [SearXNG](https://github.com/Start9Labs/searxng-startos) package on the same StartOS server.
-2. In Open WebUI, open **Settings → Web Search** (under the **Admin** section) and toggle web search on. The engine (`searxng`) and query URL are pre-filled.
+2. In Open WebUI, open **Settings → Web Search** (under the **Admin** section) and toggle web search on. The engine (`searxng`) and query URL are already filled in.
 
-The pre-filled URL hits SearXNG's JSON API directly over the local StartOS service bridge (`10.0.3.1:<assigned port>`, resolved reactively from SearXNG's binding). No public exposure is required.
+This works in either install order. Installing SearXNG re-runs `setupMain` (its bridge address is resolved with `.const()`), and the reconcile pass writes the endpoint before the daemon starts. Seeding alone would not: install Open WebUI first and the endpoint is pinned at `""`, which no restart, update or environment variable can dislodge.
+
+The query URL hits SearXNG's JSON API directly over the local StartOS service bridge (`10.0.3.1:<assigned port>`, resolved reactively from SearXNG's binding). No public exposure is required.
 
 ### User-Configurable Settings
 
@@ -131,7 +156,7 @@ Base URLs are resolved over the local service bridge (`10.0.3.1:<assigned extern
 | Maple Proxy | Optional | `maple-proxy` | `8080` (`/v1`)       | OpenAI-compatible privacy proxy; placeholder key (override in admin settings)                |
 | SearXNG     | Optional | —             | `80`                 | Self-hosted web search                                                                       |
 
-SearXNG is the exception to the rule above: it is **not** wired through Configure Backends. Install it, then turn web search on from Open WebUI's own **Settings → Web Search**, under the **Admin** section (the engine and query URL are pre-filled).
+SearXNG is the exception to the rule above: it is **not** wired through Configure Backends. Install it, then turn web search on from Open WebUI's own **Settings → Web Search**, under the **Admin** section — the engine and query URL are already filled in, in either install order (see [Enabling Web Search](#enabling-web-search-searxng)).
 
 ## Backups and Restore
 

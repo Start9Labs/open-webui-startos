@@ -1,16 +1,15 @@
 import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
-import { mainMounts, uiPort } from './utils'
+import { daemonEnv, mainMounts, uiPort } from './utils'
 import {
   ensurePublicMounted,
   KNOWN_OPENAI,
   publicCredentialsFile,
   resolveBaseUrls,
 } from './backends'
-import { adminExists, webuiConfig } from './webuiConfig'
-import { uiPort as searxngUiPort } from 'searxng-startos/startos/utils'
-import { mainHostId as searxngHostId } from 'searxng-startos/startos/interfaces'
+import { reconcileManagedConfig, resolveManagedContext } from './managedConfig'
+import { adminExists, webuiConfig, writeConfig } from './webuiConfig'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting Open WebUI!'))
@@ -27,18 +26,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
   // main restart, and a plain dependency update (assigned port unchanged) never
   // restarts. Each entry is null while its backend is absent.
   const resolved = await resolveBaseUrls(effects, 'const')
-
-  // SearXNG web-search endpoint over the bridge, same `.const()` healing. Null
-  // when SearXNG isn't installed — SEARXNG_QUERY_URL is then omitted below and
-  // web search stays unconfigured until SearXNG installs and main re-runs.
-  const searxng = await sdk.host
-    .getBridgeAddress(effects, {
-      packageId: 'searxng',
-      hostId: searxngHostId,
-      internalPort: searxngUiPort,
-      ssl: false,
-    })
-    .const()
 
   // Keep public-credential backends' keys in sync with what the dependency
   // publishes. Read each key with `.once()` (a snapshot, not a subscription):
@@ -81,19 +68,28 @@ export const main = sdk.setupMain(async ({ effects }) => {
   // admin exists. In practice `changed` can only be true once a backend has
   // been wired (which itself requires an admin), so the skip is effectively
   // unreachable — but it makes the invariant explicit and, unlike a throw,
-  // can never block daemon startup or touch a pre-onboarding database.
+  // can never block daemon startup.
   if (changed && (await adminExists(effects))) {
-    await webuiConfig.merge(effects, {
-      openai: { api_base_urls: urls, api_keys: keys },
+    await writeConfig(effects, {
+      'openai.api_base_urls': urls,
+      'openai.api_keys': keys,
     })
   }
 
-  // Absent dependency, absent value: omit each dial env var when its bridge
-  // address is null (backend not installed) rather than fabricating a dead
-  // loopback address. The daemon falls back to its own default / web search
-  // stays unconfigured, and the reactive `.const()` above heals with one
-  // restart once the backend installs.
-  const ollamaUrl = resolved['ollama']
+  // Re-assert the config values whose correct setting can change under the
+  // user. `.const()` on the dependency addresses is what makes this reactive:
+  // installing SearXNG, or its assigned bridge port moving, re-runs main and
+  // this repairs the stored value. Values the user has since changed are left
+  // alone — see managedConfig.ts.
+  const rewritten = await reconcileManagedConfig(
+    effects,
+    await resolveManagedContext(effects, 'const'),
+  )
+  if (rewritten.length) {
+    console.info(
+      `${i18n('Updated Open WebUI configuration')}: ${rewritten.join(', ')}`,
+    )
+  }
 
   return sdk.Daemons.of(effects).addDaemon('primary', {
     subcontainer: sdk.SubContainer.of(
@@ -104,33 +100,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     ),
     exec: {
       command: sdk.useEntrypoint(),
-      // Open WebUI's PersistentConfig keys (ollama.*, openai.*, rag.web.*,
-      // etc.) are seeded from these env vars on first launch and ignored
-      // thereafter — webui.db is authoritative. The Configure Backends
-      // action and Open WebUI's own admin UI both read/write that DB
-      // directly, so the values stay in 2-way sync without env-var
-      // overrides on every restart.
-      env: {
-        WEBUI_SECRET_KEY,
-        CORS_ALLOW_ORIGIN: '*',
-        ENABLE_VERSION_UPDATE_CHECK: 'false',
-        ENABLE_COMMUNITY_SHARING: 'false',
-        ENABLE_ADMIN_ANALYTICS: 'false',
-        WEBUI_SESSION_COOKIE_SECURE: 'true',
-        ...(ollamaUrl ? { OLLAMA_BASE_URL: ollamaUrl } : {}),
-        // Opt-in: seed ollama disabled so it never auto-connects — or declares
-        // a dependency — until the user enables it via Configure Backends, even
-        // once ollama is installed. (Open WebUI defaults ENABLE_OLLAMA_API to
-        // true, so this must be explicit.)
-        ENABLE_OLLAMA_API: 'false',
-        ENABLE_OPENAI_API: 'false',
-        WEB_SEARCH_ENGINE: 'searxng',
-        ...(searxng
-          ? {
-              SEARXNG_QUERY_URL: `http://${searxng}/search?q=<query>&format=json`,
-            }
-          : {}),
-      },
+      env: daemonEnv(WEBUI_SECRET_KEY),
     },
     ready: {
       display: i18n('Web Interface'),

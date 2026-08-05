@@ -10,7 +10,7 @@ import {
   readPublicApiKey,
   resolveBaseUrls,
 } from '../backends'
-import { adminExists, webuiConfig } from '../webuiConfig'
+import { adminExists, webuiConfig, writeConfig } from '../webuiConfig'
 
 const { InputSpec, Value, List } = sdk
 
@@ -190,16 +190,12 @@ export const configureBackends = sdk.Action.withInput(
       apiKeys.push(p.apiKey ?? '')
     }
 
-    await webuiConfig.merge(effects, {
-      ollama: {
-        enable: ollamaOn,
-        base_urls: ollamaOn && ollamaUrl ? [ollamaUrl] : [],
-      },
-      openai: {
-        enable: baseUrls.length > 0,
-        api_base_urls: baseUrls,
-        api_keys: apiKeys,
-      },
+    await writeConfig(effects, {
+      'ollama.enable': ollamaOn,
+      'ollama.base_urls': ollamaOn && ollamaUrl ? [ollamaUrl] : [],
+      'openai.enable': baseUrls.length > 0,
+      'openai.api_base_urls': baseUrls,
+      'openai.api_keys': apiKeys,
     })
 
     await setDependencies(effects)

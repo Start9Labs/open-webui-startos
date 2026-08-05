@@ -32,6 +32,8 @@ export default {
     27: 'modelos locales',
     28: 'Open WebUI aún no se ha configurado. Inicia el servicio, abre la interfaz web y registra la primera cuenta (que se convierte en administradora) antes de configurar los backends.',
     29: 'Open WebUI aún no se ha configurado. Inicia el servicio, abre la interfaz web y registra la primera cuenta (que se convierte en administradora) antes de restablecer la contraseña.',
+    30: 'Preparando Open WebUI',
+    31: 'Se ha actualizado la configuración de Open WebUI',
   },
   de_DE: {
     0: 'Open WebUI wird gestartet!',
@@ -64,6 +66,8 @@ export default {
     27: 'lokale Modelle',
     28: 'Open WebUI wurde noch nicht eingerichtet. Starte den Dienst, öffne die Weboberfläche und registriere das erste Konto (das zum Admin wird), bevor du die Backends konfigurierst.',
     29: 'Open WebUI wurde noch nicht eingerichtet. Starte den Dienst, öffne die Weboberfläche und registriere das erste Konto (das zum Admin wird), bevor du das Passwort zurücksetzt.',
+    30: 'Open WebUI wird vorbereitet',
+    31: 'Die Konfiguration von Open WebUI wurde aktualisiert',
   },
   pl_PL: {
     0: 'Uruchamianie Open WebUI!',
@@ -96,6 +100,8 @@ export default {
     27: 'modele lokalne',
     28: 'Open WebUI nie zostało jeszcze skonfigurowane. Uruchom usługę, otwórz interfejs webowy i zarejestruj pierwsze konto (które stanie się administratorem) przed skonfigurowaniem backendów.',
     29: 'Open WebUI nie zostało jeszcze skonfigurowane. Uruchom usługę, otwórz interfejs webowy i zarejestruj pierwsze konto (które stanie się administratorem) przed zresetowaniem hasła.',
+    30: 'Przygotowywanie Open WebUI',
+    31: 'Zaktualizowano konfigurację Open WebUI',
   },
   fr_FR: {
     0: "Démarrage d'Open WebUI !",
@@ -128,5 +134,7 @@ export default {
     27: 'modèles locaux',
     28: "Open WebUI n'a pas encore été configuré. Démarrez le service, ouvrez l'interface web et enregistrez le premier compte (qui devient administrateur) avant de configurer les backends.",
     29: "Open WebUI n'a pas encore été configuré. Démarrez le service, ouvrez l'interface web et enregistrez le premier compte (qui devient administrateur) avant de réinitialiser le mot de passe.",
+    30: "Préparation d'Open WebUI",
+    31: "La configuration d'Open WebUI a été mise à jour",
   },
 } satisfies Record<string, LangDict>

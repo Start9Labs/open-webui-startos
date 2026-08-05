@@ -31,6 +31,8 @@ const dict = {
   'local models': 27,
   "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before configuring backends.": 28,
   "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before resetting the password.": 29,
+  'Preparing Open WebUI': 30,
+  'Updated Open WebUI configuration': 31,
 } as const
 
 export type I18nKey = keyof typeof dict

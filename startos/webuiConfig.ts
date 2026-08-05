@@ -5,33 +5,38 @@ import { KNOWN_OPENAI, ResolvedBaseUrls } from './backends'
 import { mainMounts, webuiDb } from './utils'
 
 /**
- * Two-way binding to Open WebUI's own config — its `webui.db` is the
- * single source of truth for backend wiring (Ollama URL, OpenAI-compatible
- * providers, enable flags, web-search engine, etc.). All values we manage
- * are PersistentConfig entries the daemon reads at startup and the in-app
- * admin UI writes back to.
+ * Read/write access to Open WebUI's own config. The `config` table in
+ * `webui.db` is the single source of truth for every PersistentConfig value:
+ * the daemon reads it, the admin UI writes it, and since Open WebUI 0.10 the
+ * environment only ever seeds a key that has no row yet
+ * (`Config.seed_defaults`). So this package writes the database directly —
+ * `managedConfig.ts` decides what to write and when.
  *
- * The `config` table's shape depends on the Open WebUI version, and both are
- * supported: setupMain's read runs before the daemon's own Alembic migration,
- * so an upgrade from a pre-0.10 package still hits the old shape once.
- *   - < 0.10: a single JSON blob row (`config.data`), nested keys.
- *   - >= 0.10: one row per dotted key (`config.key` / `config.value`), the
- *     blob's leaves flattened (e.g. `ollama.base_urls`, `openai.api_keys`).
- * READ_SCRIPT / WRITE_SCRIPT detect which is present and translate to/from
- * the nested `{ ollama, openai }` object the rest of this module uses, so
- * `deriveView` / `merge` stay schema-agnostic. Per-key writes upsert only the
- * keys we manage and leave every other row (ui.*, rag.*, api_configs, …)
- * untouched.
+ * This module speaks flat dotted keys (`ollama.base_urls`,
+ * `web.search.searxng_query_url`) in both directions. The table's physical
+ * shape depends on the installed version, and the scripts handle both:
+ *   - >= 0.10: one row per dotted key (`config.key` / `config.value`).
+ *   - < 0.10: a single JSON blob row (`config.data`), the same keys nested.
+ *     setupMain reads and writes before the daemon runs its own Alembic
+ *     migration, so an upgrade from a pre-0.10 package still hits this once.
  *
- * - `read()` returns a Watchable view derived from the config; the
- *   produce() loop polls webui.db / -wal mtime and refetches when it
- *   moves, so dep evaluation reacts to admin-UI edits.
- * - `merge()` updates only the keys we pass and leaves every other key
- *   intact (preserves user tweaks elsewhere).
- *
- * All SQLite IO runs through a temp open-webui SubContainer so the
- * client stack matches the daemon's (same sqlite3 library, same WAL).
+ * Reads and writes touch only the keys the caller names, leaving every other
+ * row (`ui.*`, `rag.*`, `api_configs`, …) alone. All SQLite IO runs through a
+ * temp open-webui SubContainer so the client stack matches the daemon's (same
+ * sqlite3 library, same WAL).
  */
+
+/** Flat dotted key → JSON value, as stored in the `config` table. */
+export type ConfigMap = Record<string, unknown>
+
+/** The keys `deriveView` needs to report what backends are wired up. */
+const BACKEND_KEYS = [
+  'ollama.base_urls',
+  'ollama.enable',
+  'openai.api_base_urls',
+  'openai.api_keys',
+  'openai.enable',
+]
 
 export type CustomProvider = { baseUrl: string; apiKey: string }
 
@@ -47,11 +52,14 @@ export type BackendsView = {
    */
   customProviders: CustomProvider[]
   /**
-   * Raw `openai` arrays, exposed so setupMain can patch a single key slot in
-   * place when a public-credential backend (e.g. vLLM) rotates its key.
+   * Raw stored arrays, exposed so setupMain can patch a single slot in place —
+   * a public-credential backend (e.g. vLLM) rotating its key, or a backend
+   * whose assigned bridge port has moved. Patching by index keeps
+   * `openaiApiKeys` aligned with `openaiBaseUrls`.
    */
   openaiBaseUrls: string[]
   openaiApiKeys: string[]
+  ollamaBaseUrls: string[]
 }
 
 const dbHostPath = (): string => sdk.volumes['open-webui'].subpath('webui.db')
@@ -62,41 +70,39 @@ const exists = (path: string): Promise<boolean> =>
     () => false,
   )
 
-// Keys we manage, as Open WebUI >= 0.10 stores them: flat dotted rows in the
-// per-key `config` table, reassembled into the nested { ollama, openai }
-// object deriveView/merge expect. Reading only these leaves every other row
-// alone.
 const READ_SCRIPT = `import sqlite3, sys, json
 
-MANAGED = (
-    'ollama.base_urls', 'ollama.enable',
-    'openai.api_base_urls', 'openai.api_keys', 'openai.enable',
-)
-
+keys = json.loads(sys.argv[2])
 conn = sqlite3.connect(sys.argv[1])
 c = conn.cursor()
 out = {}
 try:
     cols = {r[1] for r in c.execute('PRAGMA table_info(config)').fetchall()}
     if 'key' in cols and 'value' in cols:
-        q = ','.join(['?'] * len(MANAGED))
+        q = ','.join(['?'] * len(keys))
         for key, value in c.execute(
-            'SELECT key, value FROM config WHERE key IN (' + q + ')', MANAGED
+            'SELECT key, value FROM config WHERE key IN (' + q + ')', keys
         ).fetchall():
             try:
-                parsed = json.loads(value) if isinstance(value, (str, bytes)) else value
+                out[key] = json.loads(value) if isinstance(value, (str, bytes)) else value
             except (TypeError, ValueError):
                 continue
-            section, _, field = key.partition('.')
-            out.setdefault(section, {})[field] = parsed
     elif 'data' in cols:
         row = c.execute('SELECT data FROM config ORDER BY id DESC LIMIT 1').fetchone()
-        if row and row[0]:
-            out = json.loads(row[0]) if isinstance(row[0], (str, bytes)) else row[0]
+        blob = json.loads(row[0]) if row and isinstance(row[0], (str, bytes)) else (row[0] if row else None)
+        if isinstance(blob, dict):
+            for key in keys:
+                node = blob
+                for part in key.split('.'):
+                    node = node.get(part) if isinstance(node, dict) else None
+                    if node is None:
+                        break
+                if node is not None:
+                    out[key] = node
 finally:
     conn.close()
 
-sys.stdout.write(json.dumps(out if isinstance(out, dict) else {}))
+sys.stdout.write(json.dumps(out))
 `
 
 const WRITE_SCRIPT = `import sqlite3, sys, json, time
@@ -107,18 +113,10 @@ c = conn.cursor()
 try:
     cols = {r[1] for r in c.execute('PRAGMA table_info(config)').fetchall()}
     if 'key' in cols and 'value' in cols:
-        # Open WebUI >= 0.10: upsert only the dotted keys we're given; every
-        # other row is left untouched. Matches models.config.Config.upsert
-        # (JSON-encoded value, epoch updated_at).
+        # Open WebUI >= 0.10: upsert the dotted keys we were given and nothing
+        # else. Matches models.config.Config.upsert (JSON value, epoch time).
         now = int(time.time())
-        flat = {}
-        for section, fields in data.items():
-            if isinstance(fields, dict):
-                for field, value in fields.items():
-                    flat[section + '.' + field] = value
-            else:
-                flat[section] = fields
-        for key, value in flat.items():
+        for key, value in data.items():
             vj = json.dumps(value)
             c.execute('SELECT 1 FROM config WHERE key = ?', (key,))
             if c.fetchone():
@@ -127,13 +125,26 @@ try:
                 c.execute('INSERT INTO config (key, value, updated_at) VALUES (?, ?, ?)', (key, vj, now))
         conn.commit()
     elif 'data' in cols:
-        # Open WebUI < 0.10: single JSON blob row.
-        blob = json.dumps(data)
-        row = c.execute('SELECT id FROM config ORDER BY id DESC LIMIT 1').fetchone()
+        # Open WebUI < 0.10: one JSON blob row, the same keys nested.
+        row = c.execute('SELECT id, data FROM config ORDER BY id DESC LIMIT 1').fetchone()
+        blob = json.loads(row[1]) if row and isinstance(row[1], (str, bytes)) else (row[1] if row else None)
+        if not isinstance(blob, dict):
+            blob = {}
+        for key, value in data.items():
+            parts = key.split('.')
+            node = blob
+            for part in parts[:-1]:
+                nxt = node.get(part)
+                if not isinstance(nxt, dict):
+                    nxt = {}
+                    node[part] = nxt
+                node = nxt
+            node[parts[-1]] = value
+        encoded = json.dumps(blob)
         if row:
-            c.execute('UPDATE config SET data = ? WHERE id = ?', (blob, row[0]))
+            c.execute('UPDATE config SET data = ? WHERE id = ?', (encoded, row[0]))
         else:
-            c.execute('INSERT INTO config (data, version) VALUES (?, 0)', (blob,))
+            c.execute('INSERT INTO config (data, version) VALUES (?, 0)', (encoded,))
         conn.commit()
 finally:
     conn.close()
@@ -151,21 +162,36 @@ finally:
     conn.close()
 `
 
-async function readRaw(effects: T.Effects): Promise<Record<string, any>> {
+const stdoutOf = (out: { stdout: string | Buffer }): string =>
+  typeof out.stdout === 'string'
+    ? out.stdout
+    : Buffer.from(out.stdout).toString('utf-8')
+
+/**
+ * Read the named config keys. A key with no row is simply absent from the
+ * result — the caller distinguishes "unset" from "set to empty".
+ */
+export async function readConfig(
+  effects: T.Effects,
+  keys: string[],
+): Promise<ConfigMap> {
   if (!(await exists(dbHostPath()))) return {}
   const out = await sdk.SubContainer.withTemp(
     effects,
     { imageId: 'open-webui' },
     mainMounts,
     'webui-config-read',
-    (subc) => subc.execFail(['python3', '-c', READ_SCRIPT, webuiDb]),
+    (subc) =>
+      subc.execFail([
+        'python3',
+        '-c',
+        READ_SCRIPT,
+        webuiDb,
+        JSON.stringify(keys),
+      ]),
   )
-  const stdout =
-    typeof out.stdout === 'string'
-      ? out.stdout
-      : Buffer.from(out.stdout).toString('utf-8')
   try {
-    const parsed = JSON.parse(stdout || '{}')
+    const parsed = JSON.parse(stdoutOf(out) || '{}')
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
       ? parsed
       : {}
@@ -174,10 +200,24 @@ async function readRaw(effects: T.Effects): Promise<Record<string, any>> {
   }
 }
 
-async function writeRaw(
+/**
+ * Upsert the given keys, leaving every other key alone.
+ *
+ * Refuses to act when `webui.db` is absent: `sqlite3.connect` would create an
+ * empty file, and Open WebUI's Alembic run then inherits a database it didn't
+ * build — the corruption behind issue #15. Init boots the daemon once on
+ * install precisely so this can't happen, and this guard keeps that invariant
+ * from depending on init having run.
+ */
+export async function writeConfig(
   effects: T.Effects,
-  data: Record<string, any>,
+  values: ConfigMap,
 ): Promise<void> {
+  if (!Object.keys(values).length) return
+  if (!(await exists(dbHostPath()))) {
+    console.warn('webui.db does not exist yet; skipping config write')
+    return
+  }
   await sdk.SubContainer.withTemp(
     effects,
     { imageId: 'open-webui' },
@@ -185,18 +225,17 @@ async function writeRaw(
     'webui-config-write',
     (subc) =>
       subc.execFail(['python3', '-c', WRITE_SCRIPT, webuiDb], {
-        input: JSON.stringify(data),
+        input: JSON.stringify(values),
       }),
   )
 }
 
 /**
  * True once Open WebUI has been initialized and a first admin account exists.
- * The daemon creates webui.db and its schema on first launch, and the first
- * registered user becomes the admin. Config writes are gated on this: writing
- * to the `config` table before the schema and admin exist corrupts onboarding
- * (issue #15). File-existence is checked first so this never creates an empty
- * webui.db itself, and a missing `user` table is treated as "no admin yet".
+ * The first registered user becomes the admin, and the Configure Backends
+ * action refuses to run before that (issue #15). File-existence is checked
+ * first so this never creates an empty webui.db itself, and a missing `user`
+ * table is treated as "no admin yet".
  */
 export async function adminExists(effects: T.Effects): Promise<boolean> {
   if (!(await exists(dbHostPath()))) return false
@@ -207,30 +246,7 @@ export async function adminExists(effects: T.Effects): Promise<boolean> {
     'webui-admin-check',
     (subc) => subc.execFail(['python3', '-c', ADMIN_CHECK_SCRIPT, webuiDb]),
   )
-  const stdout =
-    typeof out.stdout === 'string'
-      ? out.stdout
-      : Buffer.from(out.stdout).toString('utf-8')
-  return stdout.trim() === 'admin'
-}
-
-function isPlainObject(x: unknown): x is Record<string, any> {
-  return typeof x === 'object' && x !== null && !Array.isArray(x)
-}
-
-function deepMerge(
-  base: Record<string, any>,
-  overlay: Record<string, any>,
-): Record<string, any> {
-  const out: Record<string, any> = { ...base }
-  for (const [k, v] of Object.entries(overlay)) {
-    if (isPlainObject(v) && isPlainObject(out[k])) {
-      out[k] = deepMerge(out[k], v)
-    } else {
-      out[k] = v
-    }
-  }
-  return out
+  return stdoutOf(out).trim() === 'admin'
 }
 
 function strArr(x: unknown): string[] {
@@ -240,20 +256,24 @@ function strArr(x: unknown): string[] {
 }
 
 function deriveView(
-  raw: Record<string, any>,
+  raw: ConfigMap,
   resolvedBaseUrls: ResolvedBaseUrls,
 ): BackendsView {
-  const ollama = isPlainObject(raw.ollama) ? raw.ollama : {}
-  const openai = isPlainObject(raw.openai) ? raw.openai : {}
-  const ollamaUrls = strArr(ollama.base_urls)
-  const openaiBaseUrls = strArr(openai.api_base_urls)
-  const openaiApiKeys: string[] = Array.isArray(openai.api_keys)
-    ? openai.api_keys.map((k: unknown) => (typeof k === 'string' ? k : ''))
+  const ollamaUrls = strArr(raw['ollama.base_urls'])
+  const openaiBaseUrls = strArr(raw['openai.api_base_urls'])
+  const openaiApiKeys: string[] = Array.isArray(raw['openai.api_keys'])
+    ? raw['openai.api_keys'].map((k: unknown) =>
+        typeof k === 'string' ? k : '',
+      )
     : []
 
   const connectedIds: string[] = []
   const ollamaUrl = resolvedBaseUrls['ollama']
-  if (ollamaUrl && (ollama.enable ?? true) && ollamaUrls.includes(ollamaUrl)) {
+  if (
+    ollamaUrl &&
+    (raw['ollama.enable'] ?? true) &&
+    ollamaUrls.includes(ollamaUrl)
+  ) {
     connectedIds.push('ollama')
   }
   for (const b of KNOWN_OPENAI) {
@@ -268,13 +288,19 @@ function deriveView(
     .map((baseUrl, i) => ({ baseUrl, apiKey: openaiApiKeys[i] ?? '' }))
     .filter((p) => !knownBaseUrls.has(p.baseUrl))
 
-  return { connectedIds, customProviders, openaiBaseUrls, openaiApiKeys }
+  return {
+    connectedIds,
+    customProviders,
+    openaiBaseUrls,
+    openaiApiKeys,
+    ollamaBaseUrls: ollamaUrls,
+  }
 }
 
 // Poll cadence for the webui.db change watcher. SQLite WAL writes update
 // webui.db-wal on every commit; mtime-stat polling at this interval gives
 // us responsive 2-way binding without spawning a SubContainer-backed
-// readRaw on every commit (which can be many per second under load).
+// read on every commit (which can be many per second under load).
 const POLL_INTERVAL_MS = 3000
 
 class WebuiConfigWatchable extends utils.Watchable<BackendsView> {
@@ -288,7 +314,10 @@ class WebuiConfigWatchable extends utils.Watchable<BackendsView> {
   }
 
   protected async fetch(): Promise<BackendsView> {
-    return deriveView(await readRaw(this.effects), this.resolvedBaseUrls)
+    return deriveView(
+      await readConfig(this.effects, BACKEND_KEYS),
+      this.resolvedBaseUrls,
+    )
   }
 
   /**
@@ -350,16 +379,5 @@ export const webuiConfig = {
     resolvedBaseUrls: ResolvedBaseUrls,
   ): WebuiConfigWatchable {
     return new WebuiConfigWatchable(effects, resolvedBaseUrls)
-  },
-
-  /**
-   * Deep-merge a partial JSON object into the `config` row's `data` blob.
-   * Keys we don't pass are left untouched, so admin-UI tweaks elsewhere
-   * persist. Creates the row on first write if it doesn't exist.
-   */
-  async merge(effects: T.Effects, partial: Record<string, any>): Promise<void> {
-    const current = await readRaw(effects)
-    const next = deepMerge(current, partial)
-    await writeRaw(effects, next)
   },
 }

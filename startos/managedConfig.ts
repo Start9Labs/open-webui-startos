@@ -1,4 +1,5 @@
 import { T } from '@start9labs/start-sdk'
+import { KNOWN_BACKENDS, ResolvedBaseUrls } from './backends'
 import { storeJson } from './fileModels/store.json'
 import { sdk } from './sdk'
 import { ConfigMap, readConfig, writeConfig } from './webuiConfig'
@@ -84,6 +85,61 @@ const RECONCILED: Reconciled[] = [
       searxng && `http://${searxng}/search?q=<query>&format=json`,
   },
 ]
+
+/**
+ * Repoint the backend entries whose assigned bridge port has moved.
+ *
+ * The backend arrays are the same problem as a reconciled key, one level down:
+ * `ollama.base_urls` and `openai.api_base_urls` mix entries this package wrote
+ * with providers the user added by hand, so ownership has to be decided per
+ * entry rather than for the whole value. `managedBackendUrls` records the URL
+ * we last wrote for each backend, which is what identifies our entry — several
+ * backends share the `10.0.3.1` bridge host and differ only by assigned port,
+ * so nothing about the URL itself can attribute it.
+ *
+ * Rewrites in place so the index is preserved and `openai.api_keys` stays
+ * aligned with `openai.api_base_urls`. Mutates both arrays; returns which of
+ * them changed and the ownership records to save.
+ *
+ * A backend that isn't installed is skipped rather than removed — its entry is
+ * the user's to delete from Configure Backends. An entry we have no record for
+ * is claimed only when it already equals the resolved address, so an install
+ * predating this bookkeeping starts healing from the next Configure Backends
+ * run rather than having a guess imposed on it.
+ */
+export function repointBackendUrls(
+  resolved: ResolvedBaseUrls,
+  owned: Record<string, string>,
+  ollamaUrls: string[],
+  openaiUrls: string[],
+): { ollama: boolean; openai: boolean; claims: Record<string, string> } {
+  const claims: Record<string, string> = {}
+  let ollama = false
+  let openai = false
+
+  for (const b of KNOWN_BACKENDS) {
+    const url = resolved[b.id]
+    if (!url) continue
+    const isOllama = b.protocol === 'ollama'
+    const arr = isOllama ? ollamaUrls : openaiUrls
+
+    if (arr.includes(url)) {
+      if (owned[b.id] !== url) claims[b.id] = url
+      continue
+    }
+    const last = owned[b.id]
+    if (last === undefined) continue
+    const idx = arr.indexOf(last)
+    if (idx < 0) continue
+
+    arr[idx] = url
+    claims[b.id] = url
+    if (isOllama) ollama = true
+    else openai = true
+  }
+
+  return { ollama, openai, claims }
+}
 
 /**
  * Whether a stored value is ours to replace: unset, empty, or still exactly

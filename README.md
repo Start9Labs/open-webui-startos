@@ -95,7 +95,11 @@ Everything else Open WebUI calls `PersistentConfig` lives in the `config` table 
 - **seed** — written once, during install, and never asserted again. A starting point the user owns from then on.
 - **reconciled** — re-asserted on every start by `setupMain`, before the daemon launches, because the correct value can change under the user: a dependency installed after Open WebUI's first launch, or an assigned bridge port that moves. A value the user has changed is never overwritten — the last value this package wrote is recorded in `store.json`, and anything that doesn't match it (and isn't empty) is left alone permanently.
 
-The backend connection keys (`ollama.base_urls`, `openai.api_base_urls`, `openai.api_keys`) are written by the Configure Backends action rather than by either policy; they are the obvious next candidates for `reconciled`, which would also heal a backend whose bridge port moved.
+### Backend connection URLs
+
+`ollama.base_urls` and `openai.api_base_urls` are written by the Configure Backends action, and get the same treatment one level down: they are arrays mixing entries this package wrote with providers the user added by hand, so ownership is decided **per entry**. Configure Backends records the URL it wrote for each backend in `store.json`, and `setupMain` repoints an entry whose assigned bridge port has since moved — in place, so `openai.api_keys` stays aligned by index.
+
+Several backends share the `10.0.3.1` bridge host and differ only by port, so nothing about a URL identifies which backend it belongs to; the recorded value is what makes the attribution. An entry with no record is claimed only when it already equals the resolved address, so an install predating this bookkeeping starts healing from its next Configure Backends run rather than having a guess imposed on it. A backend that is uninstalled is left alone — its entry is the user's to remove.
 
 ### Enabling Web Search (SearXNG)
 

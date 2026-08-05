@@ -5,11 +5,13 @@ import { setDependencies } from '../dependencies'
 import {
   detectInstalled,
   KnownBackend,
+  KNOWN_BACKENDS,
   KNOWN_OPENAI,
   PLACEHOLDER_API_KEY,
   readPublicApiKey,
   resolveBaseUrls,
 } from '../backends'
+import { storeJson } from '../fileModels/store.json'
 import { adminExists, webuiConfig, writeConfig } from '../webuiConfig'
 
 const { InputSpec, Value, List } = sdk
@@ -196,6 +198,16 @@ export const configureBackends = sdk.Action.withInput(
       'openai.enable': baseUrls.length > 0,
       'openai.api_base_urls': baseUrls,
       'openai.api_keys': apiKeys,
+    })
+
+    // Record which entry belongs to which backend, so setupMain can repoint it
+    // if that dependency's assigned bridge port later moves.
+    await storeJson.merge(effects, {
+      managedBackendUrls: Object.fromEntries(
+        KNOWN_BACKENDS.filter((b) => selected.has(b.id) && resolved[b.id]).map(
+          (b) => [b.id, resolved[b.id]!],
+        ),
+      ),
     })
 
     await setDependencies(effects)

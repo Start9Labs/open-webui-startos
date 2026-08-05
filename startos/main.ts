@@ -8,8 +8,12 @@ import {
   publicCredentialsFile,
   resolveBaseUrls,
 } from './backends'
-import { reconcileManagedConfig, resolveManagedContext } from './managedConfig'
-import { adminExists, webuiConfig, writeConfig } from './webuiConfig'
+import {
+  reconcileManagedConfig,
+  repointBackendUrls,
+  resolveManagedContext,
+} from './managedConfig'
+import { adminExists, ConfigMap, webuiConfig, writeConfig } from './webuiConfig'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting Open WebUI!'))
@@ -35,6 +39,13 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const view = await webuiConfig.read(effects, resolved).once()
   const urls = [...view.openaiBaseUrls]
   const keys = [...view.openaiApiKeys]
+  const ollamaUrls = [...view.ollamaBaseUrls]
+
+  // Repoint first: the key re-sync below finds a backend's slot by looking up
+  // its resolved URL, which a moved bridge port would otherwise no longer match.
+  const owned = (await storeJson.read((s) => s.managedBackendUrls).once()) ?? {}
+  const repointed = repointBackendUrls(resolved, owned, ollamaUrls, urls)
+
   let changed = false
   for (const b of KNOWN_OPENAI) {
     if (b.keySource !== 'public') continue
@@ -65,15 +76,19 @@ export const main = sdk.setupMain(async ({ effects }) => {
     }
   }
   // Defense-in-depth for issue #15: never write the config table before an
-  // admin exists. In practice `changed` can only be true once a backend has
+  // admin exists. In practice none of these can be true until a backend has
   // been wired (which itself requires an admin), so the skip is effectively
   // unreachable — but it makes the invariant explicit and, unlike a throw,
   // can never block daemon startup.
-  if (changed && (await adminExists(effects))) {
-    await writeConfig(effects, {
-      'openai.api_base_urls': urls,
-      'openai.api_keys': keys,
-    })
+  const backendWrites: ConfigMap = {}
+  if (repointed.ollama) backendWrites['ollama.base_urls'] = ollamaUrls
+  if (repointed.openai) backendWrites['openai.api_base_urls'] = urls
+  if (changed) backendWrites['openai.api_keys'] = keys
+  if (Object.keys(backendWrites).length && (await adminExists(effects))) {
+    await writeConfig(effects, backendWrites)
+  }
+  if (Object.keys(repointed.claims).length) {
+    await storeJson.merge(effects, { managedBackendUrls: repointed.claims })
   }
 
   // Re-assert the config values whose correct setting can change under the

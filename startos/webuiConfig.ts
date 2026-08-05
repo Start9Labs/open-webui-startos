@@ -52,11 +52,14 @@ export type BackendsView = {
    */
   customProviders: CustomProvider[]
   /**
-   * Raw `openai` arrays, exposed so setupMain can patch a single key slot in
-   * place when a public-credential backend (e.g. vLLM) rotates its key.
+   * Raw stored arrays, exposed so setupMain can patch a single slot in place —
+   * a public-credential backend (e.g. vLLM) rotating its key, or a backend
+   * whose assigned bridge port has moved. Patching by index keeps
+   * `openaiApiKeys` aligned with `openaiBaseUrls`.
    */
   openaiBaseUrls: string[]
   openaiApiKeys: string[]
+  ollamaBaseUrls: string[]
 }
 
 const dbHostPath = (): string => sdk.volumes['open-webui'].subpath('webui.db')
@@ -285,7 +288,13 @@ function deriveView(
     .map((baseUrl, i) => ({ baseUrl, apiKey: openaiApiKeys[i] ?? '' }))
     .filter((p) => !knownBaseUrls.has(p.baseUrl))
 
-  return { connectedIds, customProviders, openaiBaseUrls, openaiApiKeys }
+  return {
+    connectedIds,
+    customProviders,
+    openaiBaseUrls,
+    openaiApiKeys,
+    ollamaBaseUrls: ollamaUrls,
+  }
 }
 
 // Poll cadence for the webui.db change watcher. SQLite WAL writes update

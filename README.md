@@ -96,7 +96,7 @@ Everything else Open WebUI calls `PersistentConfig` lives in the `config` table 
 - **seed** — written once, during install, and never asserted again. A starting point the user owns from then on.
 - **reconciled** — re-asserted on every start by `setupMain`, before the daemon launches, because the correct value can change under the user: a dependency installed after Open WebUI's first launch, or an assigned bridge port that moves. A value the user has changed is never overwritten — the last value this package wrote is recorded in `store.json`, and anything that doesn't match it (and isn't empty) is left alone permanently.
 
-  One exception, which repairs installs from before that bookkeeping existed: a key with **no ownership record at all** and a stored value that could only have been aimed at the service we manage — the same bridge host as the desired address, or `searxng.startos` — is taken back once. Every write path since `0.11.0:1` claims its key, so a missing record can only mean a pre-`0.11.0:1` install, and those are exactly the ones the blank-address bug could strand. Claiming the key on the way through means the repair fires at most once; `isOurs` governs from then on. Any other value — a public SearXNG, a hostname we can't attribute — is the user's and stays theirs, which is what the [Reconnect SearXNG](#reconnect-searxng-reconnect-searxng) action exists for.
+  One transitional exception (`isStranded`, tracked for removal in `TODO.md`): a key with **no ownership record at all** — only possible on a pre-`0.11.0:1` install, since every write path since then claims its key — is taken back once if the stored value names this server's own SearXNG (the bridge host, or `searxng.startos`). Any other value is the user's and stays theirs.
 
 ### Backend connection URLs
 
@@ -154,9 +154,7 @@ All other configuration is done through the Open WebUI web interface:
 
 **Why this action has to exist.** `reconcileManagedConfig` only rewrites a value that is absent, empty, or byte-identical to what the package last wrote (`isOurs`) — a deliberate rule so a user's own endpoint is never clobbered. But that decision is one-way: the only state that would release the key back is empty, and Open WebUI's admin form won't save it, because the Searxng Query URL input is marked `required` upstream ([`WebSearch.svelte`](https://github.com/open-webui/open-webui/blob/v0.11.0/src/lib/components/admin/Settings/WebSearch.svelte#L294)) and sits in a form with native validation. So editing the field once permanently ended the automatic address handling, with a `sqlite3` command over SSH or a full reinstall as the only recoveries. This action is the supported recovery, and it is the only caller allowed to skip `isOurs` — it runs solely on an explicit user request. It deliberately does **not** rewrite the `SEED` values, which are one-time starting points the user owns; doing so would silently reset their backend choices.
 
-**Why it is prompted rather than left to be found.** The people in this state are by definition the ones who already tried to fix the address by hand; web search then fails silently, returning nothing with no error to trace. An action nobody knows to look for is not a recovery, so `setupMain` raises a task pointing at it. `important`, not `critical` — a wrong search address is not a reason to block the service from starting.
-
-**Scope.** `reclaimManagedConfig` reclaims every `RECONCILED` key, and `web.search.searxng_query_url` is the only one. Adding a second reconciled key means revisiting this action's name, its SearXNG-specific guard, and the task condition in `setupMain` together.
+**Scope.** `reclaimManagedConfig` reclaims every `RECONCILED` key, and `web.search.searxng_query_url` is the only one. Adding a second means revisiting this action's name, its SearXNG-specific guard, and the task condition in `setupMain` together.
 
 ### Reset Admin Password (`reset-password`)
 

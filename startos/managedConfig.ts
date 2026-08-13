@@ -72,12 +72,7 @@ type Reconciled = {
   legacyKeys: string[]
   /** The value we want, or null when there is nothing to assert. */
   desired: (ctx: ManagedContext) => string | null
-  /**
-   * Whether a stored value was an attempt to reach the same service we point
-   * this key at — a wrong port or path rather than an endpoint of the user's
-   * own. Consulted only for a key with no ownership record at all; see
-   * `isStranded`.
-   */
+  /** Whether a stored value was aimed at this key's service. See `isStranded`. */
   aimedAtUs?: (stored: string, desired: string) => boolean
 }
 
@@ -103,11 +98,8 @@ const RECONCILED: Reconciled[] = [
     // `<query>` is Open WebUI's own substitution placeholder.
     desired: ({ searxng }) =>
       searxng && `http://${searxng}/search?q=<query>&format=json`,
-    // Two hostnames can only ever mean the SearXNG on this server: the service
-    // bridge the desired address itself uses, and the package's overlay DNS
-    // name (which does not route from here, and is the natural guess for
-    // someone filling the field in by hand). Anything else — a public
-    // instance, a name we can't attribute — is an endpoint of the user's own.
+    // The bridge host, or the overlay DNS name that doesn't route from here —
+    // the two ways of naming this server's own SearXNG.
     aimedAtUs: (stored, desired) => {
       const host = hostnameOf(stored)
       return (
@@ -184,18 +176,11 @@ const isOurs = (stored: string | undefined, lastWritten: string | undefined) =>
   stored === undefined || stored === '' || stored === lastWritten
 
 /**
- * Whether a value we don't own is a stranded attempt to reach the service the
- * key points at, and so ours to repair once.
+ * A value we don't own, but should repair anyway.
  *
- * Having no ownership record at all is the tell. Since 0.11.0:1 every write
- * path claims its key — install seeds and claims, and reconcile claims even a
- * value it finds already correct — so an unclaimed key means an install
- * predating that bookkeeping. Those are exactly the installs that could be
- * left with a blank SearXNG address, whose owners then typed one in by hand.
- * The entry decides whether what they typed was aimed at us.
- *
- * Claiming the key on the way through is what keeps this to a single repair:
- * once there is a record, `isOurs` governs from then on.
+ * Every write path since 0.11.0:1 claims its key, so no record at all means an
+ * install predating that — the ones the blank-address bug could strand. The
+ * repair claims the key, so it fires at most once. Transitional; see TODO.md.
  */
 const isStranded = (
   entry: Reconciled,
@@ -251,10 +236,8 @@ export async function seedManagedConfig(
  * the user explicitly asks for the address to be re-adopted, which is why it
  * can skip the ownership check the reconcile pass exists to honour.
  *
- * Unlike the reconcile pass this runs with the daemon up, so Open WebUI's
- * in-memory `PersistentConfig` still holds the old value and would win if the
- * admin UI saved web-search settings before the caller's restart landed. The
- * caller restarts immediately for that reason.
+ * Runs with the daemon up, whose in-memory `PersistentConfig` still holds the
+ * old value — so the caller must restart immediately.
  *
  * Deliberately does not touch `SEED`: those are one-time starting points the
  * user owns, and rewriting them here would silently reset their backend
@@ -282,9 +265,8 @@ export async function reclaimManagedConfig(
  * the daemon: no other writer is touching the database then, and a key with no
  * row yet is created before anything reads it.
  *
- * Reports the keys it rewrote and the keys it declined because the stored
- * value is the user's. A declined key is a dead end for this pass and every
- * later one, so the caller surfaces the action that can undo it.
+ * A declined key is a dead end for every later pass too, so the caller
+ * surfaces the action that can undo it.
  */
 export async function reconcileManagedConfig(
   effects: T.Effects,

@@ -108,10 +108,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
     )
   }
 
-  // A declined SearXNG endpoint is the one managed value this package cannot
-  // repair on its own, and it fails silently — web search just returns
-  // nothing. Prompt for the action that undoes it, and retire the prompt as
-  // soon as the address is back under management.
+  // StartOS drops a task with no `when` when its action runs, so the clear is
+  // only for the other exits: SearXNG uninstalled, or the value put right by
+  // hand.
   if (declined.includes(SEARXNG_QUERY_URL_KEY)) {
     await sdk.action.createOwnTask(effects, reconnectSearxng, 'important', {
       reason: i18n(

@@ -72,9 +72,12 @@ type Reconciled = {
   desired: (ctx: ManagedContext) => string | null
 }
 
+/** The reconciled key holding SearXNG's web-search endpoint. */
+export const SEARXNG_QUERY_URL_KEY = 'web.search.searxng_query_url'
+
 const RECONCILED: Reconciled[] = [
   {
-    key: 'web.search.searxng_query_url',
+    key: SEARXNG_QUERY_URL_KEY,
     // 0.11 renames the `rag.web.` key prefix to `web.` at startup, after
     // setupMain has already read, so a database carried over from 0.10.x still
     // spells it the old way. Writing only the new spelling is safe either way:
@@ -177,6 +180,45 @@ export async function seedManagedConfig(
 
   await writeConfig(effects, values)
   await storeJson.merge(effects, { managedConfig: written })
+}
+
+/**
+ * Take the reconciled values back under management, ignoring `isOurs`, and
+ * return what was written.
+ *
+ * `reconcileManagedConfig` deliberately never overwrites a value the user
+ * changed — but that decision is permanent and has no route back, because the
+ * one state that would release it (empty) is one Open WebUI's admin form
+ * refuses to save: the Searxng Query URL input is marked `required`. So a user
+ * who edits the field once is locked out of the automatic address handling for
+ * good, with a database edit as the only remedy.
+ *
+ * This is that remedy, as an action. It is never called implicitly — only when
+ * the user explicitly asks for the address to be re-adopted, which is why it
+ * can skip the ownership check the reconcile pass exists to honour.
+ *
+ * Deliberately does not touch `SEED`: those are one-time starting points the
+ * user owns, and rewriting them here would silently reset their backend
+ * choices.
+ */
+export async function reclaimManagedConfig(
+  effects: T.Effects,
+  ctx: ManagedContext,
+): Promise<ConfigMap> {
+  const values: ConfigMap = {}
+  const claimed: Record<string, string> = {}
+  for (const entry of RECONCILED) {
+    const desired = entry.desired(ctx)
+    if (desired === null) continue
+    values[entry.key] = desired
+    claimed[entry.key] = desired
+  }
+
+  await writeConfig(effects, values)
+  if (Object.keys(claimed).length) {
+    await storeJson.merge(effects, { managedConfig: claimed })
+  }
+  return values
 }
 
 /**

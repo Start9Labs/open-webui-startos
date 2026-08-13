@@ -12,7 +12,9 @@ import {
   reconcileManagedConfig,
   repointBackendUrls,
   resolveManagedContext,
+  SEARXNG_QUERY_URL_KEY,
 } from './managedConfig'
+import { reconnectSearxng } from './actions/reconnectSearxng'
 import { adminExists, ConfigMap, webuiConfig, writeConfig } from './webuiConfig'
 
 export const main = sdk.setupMain(async ({ effects }) => {
@@ -96,13 +98,29 @@ export const main = sdk.setupMain(async ({ effects }) => {
   // installing SearXNG, or its assigned bridge port moving, re-runs main and
   // this repairs the stored value. Values the user has since changed are left
   // alone — see managedConfig.ts.
-  const rewritten = await reconcileManagedConfig(
+  const { rewritten, declined } = await reconcileManagedConfig(
     effects,
     await resolveManagedContext(effects, 'const'),
   )
   if (rewritten.length) {
     console.info(
       `${i18n('Updated Open WebUI configuration')}: ${rewritten.join(', ')}`,
+    )
+  }
+
+  // StartOS drops a task with no `when` when its action runs, so the clear is
+  // only for the other exits: SearXNG uninstalled, or the value put right by
+  // hand.
+  if (declined.includes(SEARXNG_QUERY_URL_KEY)) {
+    await sdk.action.createOwnTask(effects, reconnectSearxng, 'important', {
+      reason: i18n(
+        'The web search address is one this server does not manage, so searches may not reach SearXNG. Reconnect SearXNG to restore it.',
+      ),
+    })
+  } else {
+    await sdk.action.clearTask(
+      effects,
+      `${sdk.manifest.id}:${reconnectSearxng.id}`,
     )
   }
 

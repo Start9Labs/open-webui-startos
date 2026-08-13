@@ -54,9 +54,10 @@
 
 Install runs three steps before the service is ever started normally (`startos/init/bootstrap.ts`):
 
-1. **Seed the model cache.** The image bakes 265 MB of models into `/app/backend/data/cache` — the two text-embedding models used for document search (`all-MiniLM-L6-v2`, `TaylorAI/bge-micro-v2`), Whisper for audio transcription, and the tiktoken vocabularies. That directory is the *only* thing in `/app/backend/data` in the image, and it is exactly where the `open-webui` volume is mounted at runtime, so the mount hides all of it and the models are re-fetched from HuggingFace on demand. The cache is copied onto the volume first, with `cp -n` so nothing the user has since downloaded is overwritten.
+1. **Seed the model cache.** The image bakes 265 MB of models into `/app/backend/data/cache` — the two text-embedding models used for document search (`all-MiniLM-L6-v2`, `TaylorAI/bge-micro-v2`), Whisper for audio transcription, and the tiktoken vocabularies. That directory is the _only_ thing in `/app/backend/data` in the image, and it is exactly where the `open-webui` volume is mounted at runtime, so the mount hides all of it and the models are re-fetched from HuggingFace on demand. The cache is copied onto the volume first, with `cp -n` so nothing the user has since downloaded is overwritten.
 
-   This does not make the box fully independent of HuggingFace. `sentence_transformers` resolves the embedding repo's `main` revision and pulls a 30-file snapshot — more formats than the image bakes — so the **install** boot below completes that download (measured: ~800 MB on top of the copied blobs, ~11 s on a warm link). What the copy buys is that Whisper and tiktoken, which load lazily on first use and are *not* covered by that boot, are already present; and that every start after install resolves all 30 files from cache instantly rather than downloading anything.
+   This does not make the box fully independent of HuggingFace. `sentence_transformers` resolves the embedding repo's `main` revision and pulls a 30-file snapshot — more formats than the image bakes — so the **install** boot below completes that download (measured: ~800 MB on top of the copied blobs, ~11 s on a warm link). What the copy buys is that Whisper and tiktoken, which load lazily on first use and are _not_ covered by that boot, are already present; and that every start after install resolves all 30 files from cache instantly rather than downloading anything.
+
 2. **Generate `WEBUI_SECRET_KEY`** into `store.json`.
 3. **Boot Open WebUI once, to completion, then shut it down** (`runUntilSuccess`). This is the only thing that creates `webui.db` and its schema: Alembic runs at import and the config table is seeded immediately afterwards. Doing it here means every later config write can assume the table exists, so no other code carries first-run branching. If it fails or times out, init fails and StartOS rolls the install back.
 
@@ -84,16 +85,18 @@ These are plain environment variables that Open WebUI re-reads each launch, so s
 
 Everything else Open WebUI calls `PersistentConfig` lives in the `config` table of `webui.db`. **Since Open WebUI 0.10 the environment only seeds such a key when it has no row yet** (`Config.seed_defaults` — _"Insert keys that don't yet exist in the DB … Existing DB values take precedence over defaults"_). After a key's first launch the stored row wins for good, whether or not the user ever edited it — so an env var is a one-shot seed, never an override. This package therefore writes these values to the database directly (`startos/managedConfig.ts`), under one of two policies:
 
-| Key                            | Policy     | Value                                                          | Purpose                                                            |
-| ------------------------------ | ---------- | -------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `ollama.enable`                | seed       | `false`                                                        | Keep Ollama opt-in until Configure Backends turns it on            |
-| `openai.enable`                | seed       | `false`                                                        | Keep OpenAI-compatible backends opt-in                             |
-| `ui.enable_community_sharing`  | seed       | `false`                                                        | Disable community sharing                                          |
-| `web.search.engine`            | seed       | `searxng`                                                      | Default web-search backend (only used if web search is turned on)  |
-| `web.search.searxng_query_url` | reconciled | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled             |
+| Key                            | Policy     | Value                                                          | Purpose                                                           |
+| ------------------------------ | ---------- | -------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `ollama.enable`                | seed       | `false`                                                        | Keep Ollama opt-in until Configure Backends turns it on           |
+| `openai.enable`                | seed       | `false`                                                        | Keep OpenAI-compatible backends opt-in                            |
+| `ui.enable_community_sharing`  | seed       | `false`                                                        | Disable community sharing                                         |
+| `web.search.engine`            | seed       | `searxng`                                                      | Default web-search backend (only used if web search is turned on) |
+| `web.search.searxng_query_url` | reconciled | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled            |
 
 - **seed** — written once, during install, and never asserted again. A starting point the user owns from then on.
 - **reconciled** — re-asserted on every start by `setupMain`, before the daemon launches, because the correct value can change under the user: a dependency installed after Open WebUI's first launch, or an assigned bridge port that moves. A value the user has changed is never overwritten — the last value this package wrote is recorded in `store.json`, and anything that doesn't match it (and isn't empty) is left alone permanently.
+
+  One transitional exception (`isStranded`, tracked for removal in `TODO.md`): a key with **no ownership record at all** — only possible on a pre-`0.11.0:1` install, since every write path since then claims its key — is taken back once if the stored value names this server's own SearXNG (the bridge host, or `searxng.startos`). Any other value is the user's and stays theirs.
 
 ### Backend connection URLs
 
@@ -137,6 +140,21 @@ All other configuration is done through the Open WebUI web interface:
 - **Availability:** Any status (running or stopped)
 - **Guard:** Refuses to run until a first admin account exists (see [Installation and First-Run Flow](#installation-and-first-run-flow)).
 - **Effect:** Writes `ollama.*` / `openai.*` into Open WebUI's config DB, updates the package's running-dependency set, and restarts Open WebUI.
+
+### Reconnect SearXNG (`reconnect-searxng`)
+
+- **Purpose:** Take `web.search.searxng_query_url` back under management after the user has edited it in Open WebUI's admin settings.
+- **Visibility:** Enabled
+- **Availability:** Any status (running or stopped)
+- **Inputs:** None
+- **Outputs:** Displays the restored address (copyable)
+- **Guards:** Refuses to run before a first admin account exists (issue #15), and when SearXNG isn't installed — there is no address to restore, and fabricating one would be worse than saying so.
+- **Effect:** Calls `reclaimManagedConfig`, which writes the reconciled values and re-records ownership in `store.json`, then restarts Open WebUI so the daemon reads the restored value.
+- **Prompted by:** `setupMain`, as an `important` task, whenever the reconcile pass declines the SearXNG key. Running the action restarts the service, and the next reconcile finds the value correct and clears the task.
+
+**Why this action has to exist.** `reconcileManagedConfig` only rewrites a value that is absent, empty, or byte-identical to what the package last wrote (`isOurs`) — a deliberate rule so a user's own endpoint is never clobbered. But that decision is one-way: the only state that would release the key back is empty, and Open WebUI's admin form won't save it, because the Searxng Query URL input is marked `required` upstream ([`WebSearch.svelte`](https://github.com/open-webui/open-webui/blob/v0.11.0/src/lib/components/admin/Settings/WebSearch.svelte#L294)) and sits in a form with native validation. So editing the field once permanently ended the automatic address handling, with a `sqlite3` command over SSH or a full reinstall as the only recoveries. This action is the supported recovery, and it is the only caller allowed to skip `isOurs` — it runs solely on an explicit user request. It deliberately does **not** rewrite the `SEED` values, which are one-time starting points the user owns; doing so would silently reset their backend choices.
+
+**Scope.** `reclaimManagedConfig` reclaims every `RECONCILED` key, and `web.search.searxng_query_url` is the only one. Adding a second means revisiting this action's name, its SearXNG-specific guard, and the task condition in `setupMain` together.
 
 ### Reset Admin Password (`reset-password`)
 

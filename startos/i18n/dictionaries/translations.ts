@@ -39,6 +39,7 @@ export default {
     34: 'Open WebUI aún no se ha configurado. Inicia el servicio, abre la interfaz web y registra la primera cuenta (que se convierte en administradora) antes de reconectar SearXNG.',
     35: 'SearXNG no está instalado en este servidor, así que no hay ninguna dirección a la que reconectarse. Instala SearXNG e inícialo, y luego vuelve a ejecutar esta acción.',
     36: 'La búsqueda web vuelve a apuntar a SearXNG y Open WebUI se está reiniciando. La dirección de abajo vuelve a gestionarse por ti: déjala en paz y se mantendrá correcta.',
+    37: 'La dirección de búsqueda web no está gestionada por este servidor, así que puede que las búsquedas no lleguen a SearXNG. Ejecuta Reconectar SearXNG para restaurarla.',
   },
   de_DE: {
     0: 'Open WebUI wird gestartet!',
@@ -78,6 +79,7 @@ export default {
     34: 'Open WebUI wurde noch nicht eingerichtet. Starte den Dienst, öffne die Weboberfläche und registriere das erste Konto (das zum Admin wird), bevor du SearXNG neu verbindest.',
     35: 'SearXNG ist auf diesem Server nicht installiert, es gibt also keine Adresse, zu der neu verbunden werden könnte. Installiere SearXNG, starte es, und führe diese Aktion dann erneut aus.',
     36: 'Die Websuche zeigt wieder auf SearXNG, und Open WebUI startet neu. Die Adresse unten wird nun wieder für dich verwaltet — lass sie unverändert, dann bleibt sie korrekt.',
+    37: 'Die Websuchadresse wird von diesem Server nicht verwaltet, daher erreichen Suchanfragen SearXNG möglicherweise nicht. Führe „SearXNG neu verbinden“ aus, um sie wiederherzustellen.',
   },
   pl_PL: {
     0: 'Uruchamianie Open WebUI!',
@@ -117,6 +119,7 @@ export default {
     34: 'Open WebUI nie zostało jeszcze skonfigurowane. Uruchom usługę, otwórz interfejs webowy i zarejestruj pierwsze konto (które stanie się administratorem) przed ponownym połączeniem z SearXNG.',
     35: 'SearXNG nie jest zainstalowane na tym serwerze, więc nie ma adresu, z którym można by się połączyć. Zainstaluj SearXNG, uruchom je i ponownie wykonaj tę akcję.',
     36: 'Wyszukiwanie w sieci znów kieruje na SearXNG, a Open WebUI się restartuje. Adres poniżej jest ponownie zarządzany za Ciebie — zostaw go w spokoju, a pozostanie poprawny.',
+    37: 'Adres wyszukiwania w sieci nie jest zarządzany przez ten serwer, więc zapytania mogą nie docierać do SearXNG. Uruchom „Połącz ponownie z SearXNG”, aby go przywrócić.',
   },
   fr_FR: {
     0: "Démarrage d'Open WebUI !",
@@ -156,5 +159,6 @@ export default {
     34: "Open WebUI n'a pas encore été configuré. Démarrez le service, ouvrez l'interface web et enregistrez le premier compte (qui devient administrateur) avant de reconnecter SearXNG.",
     35: "SearXNG n'est pas installé sur ce serveur : il n'y a donc aucune adresse à laquelle se reconnecter. Installez SearXNG, démarrez-le, puis relancez cette action.",
     36: "La recherche web pointe de nouveau vers SearXNG, et Open WebUI redémarre. L'adresse ci-dessous est à nouveau gérée pour vous — laissez-la telle quelle et elle restera correcte.",
+    37: "L'adresse de recherche web n'est pas gérée par ce serveur : les recherches risquent donc de ne pas atteindre SearXNG. Lancez « Reconnecter SearXNG » pour la rétablir.",
   },
 } satisfies Record<string, LangDict>

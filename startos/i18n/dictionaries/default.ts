@@ -38,6 +38,7 @@ const dict = {
   "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before reconnecting SearXNG.": 34,
   "SearXNG isn't installed on this server, so there is no address to reconnect to. Install SearXNG and start it, then run this action again.": 35,
   'Web search is pointed back at SearXNG, and Open WebUI is restarting. The address below is now managed for you again — leave it alone and it will stay correct.': 36,
+  'The web search address is one this server does not manage, so searches may not reach SearXNG. Reconnect SearXNG to restore it.': 37,
 } as const
 
 export type I18nKey = keyof typeof dict

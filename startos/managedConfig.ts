@@ -30,6 +30,8 @@ export type ManagedContext = {
   searxng: string | null
 }
 
+const SEARXNG_PACKAGE_ID = 'searxng'
+
 /**
  * Resolve the dependency addresses the managed values are built from. Use
  * `'const'` in setupMain so installing SearXNG (or its assigned bridge port
@@ -43,7 +45,7 @@ export async function resolveManagedContext(
   return {
     searxng: await sdk.host
       .getBridgeAddress(effects, {
-        packageId: 'searxng',
+        packageId: SEARXNG_PACKAGE_ID,
         hostId: searxngHostId,
         internalPort: searxngUiPort,
         ssl: false,
@@ -70,6 +72,21 @@ type Reconciled = {
   legacyKeys: string[]
   /** The value we want, or null when there is nothing to assert. */
   desired: (ctx: ManagedContext) => string | null
+  /**
+   * Whether a stored value was an attempt to reach the same service we point
+   * this key at — a wrong port or path rather than an endpoint of the user's
+   * own. Consulted only for a key with no ownership record at all; see
+   * `isStranded`.
+   */
+  aimedAtUs?: (stored: string, desired: string) => boolean
+}
+
+const hostnameOf = (url: string): string | null => {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return null
+  }
 }
 
 /** The reconciled key holding SearXNG's web-search endpoint. */
@@ -86,6 +103,19 @@ const RECONCILED: Reconciled[] = [
     // `<query>` is Open WebUI's own substitution placeholder.
     desired: ({ searxng }) =>
       searxng && `http://${searxng}/search?q=<query>&format=json`,
+    // Two hostnames can only ever mean the SearXNG on this server: the service
+    // bridge the desired address itself uses, and the package's overlay DNS
+    // name (which does not route from here, and is the natural guess for
+    // someone filling the field in by hand). Anything else — a public
+    // instance, a name we can't attribute — is an endpoint of the user's own.
+    aimedAtUs: (stored, desired) => {
+      const host = hostnameOf(stored)
+      return (
+        host !== null &&
+        (host === hostnameOf(desired) ||
+          host === `${SEARXNG_PACKAGE_ID}.startos`)
+      )
+    },
   },
 ]
 
@@ -153,6 +183,30 @@ export function repointBackendUrls(
 const isOurs = (stored: string | undefined, lastWritten: string | undefined) =>
   stored === undefined || stored === '' || stored === lastWritten
 
+/**
+ * Whether a value we don't own is a stranded attempt to reach the service the
+ * key points at, and so ours to repair once.
+ *
+ * Having no ownership record at all is the tell. Since 0.11.0:1 every write
+ * path claims its key — install seeds and claims, and reconcile claims even a
+ * value it finds already correct — so an unclaimed key means an install
+ * predating that bookkeeping. Those are exactly the installs that could be
+ * left with a blank SearXNG address, whose owners then typed one in by hand.
+ * The entry decides whether what they typed was aimed at us.
+ *
+ * Claiming the key on the way through is what keeps this to a single repair:
+ * once there is a record, `isOurs` governs from then on.
+ */
+const isStranded = (
+  entry: Reconciled,
+  stored: string | undefined,
+  lastWritten: string | undefined,
+  desired: string,
+) =>
+  lastWritten === undefined &&
+  stored !== undefined &&
+  (entry.aimedAtUs?.(stored, desired) ?? false)
+
 const storedValue = (current: ConfigMap, entry: Reconciled) =>
   [entry.key, ...entry.legacyKeys]
     .map((k) => current[k])
@@ -197,6 +251,11 @@ export async function seedManagedConfig(
  * the user explicitly asks for the address to be re-adopted, which is why it
  * can skip the ownership check the reconcile pass exists to honour.
  *
+ * Unlike the reconcile pass this runs with the daemon up, so Open WebUI's
+ * in-memory `PersistentConfig` still holds the old value and would win if the
+ * admin UI saved web-search settings before the caller's restart landed. The
+ * caller restarts immediately for that reason.
+ *
  * Deliberately does not touch `SEED`: those are one-time starting points the
  * user owns, and rewriting them here would silently reset their backend
  * choices.
@@ -204,33 +263,33 @@ export async function seedManagedConfig(
 export async function reclaimManagedConfig(
   effects: T.Effects,
   ctx: ManagedContext,
-): Promise<ConfigMap> {
-  const values: ConfigMap = {}
+): Promise<Record<string, string>> {
   const claimed: Record<string, string> = {}
   for (const entry of RECONCILED) {
     const desired = entry.desired(ctx)
-    if (desired === null) continue
-    values[entry.key] = desired
-    claimed[entry.key] = desired
+    if (desired !== null) claimed[entry.key] = desired
   }
 
-  await writeConfig(effects, values)
+  await writeConfig(effects, claimed)
   if (Object.keys(claimed).length) {
     await storeJson.merge(effects, { managedConfig: claimed })
   }
-  return values
+  return claimed
 }
 
 /**
- * Re-assert the reconciled values against what is stored, and return the keys
- * that had to be rewritten. Call before starting the daemon: no other writer
- * is touching the database then, and a key with no row yet is created before
- * anything reads it.
+ * Re-assert the reconciled values against what is stored. Call before starting
+ * the daemon: no other writer is touching the database then, and a key with no
+ * row yet is created before anything reads it.
+ *
+ * Reports the keys it rewrote and the keys it declined because the stored
+ * value is the user's. A declined key is a dead end for this pass and every
+ * later one, so the caller surfaces the action that can undo it.
  */
 export async function reconcileManagedConfig(
   effects: T.Effects,
   ctx: ManagedContext,
-): Promise<string[]> {
+): Promise<{ rewritten: string[]; declined: string[] }> {
   const lastWritten =
     (await storeJson.read((s) => s.managedConfig).once()) ?? {}
   const current = await readConfig(
@@ -240,6 +299,7 @@ export async function reconcileManagedConfig(
 
   const values: ConfigMap = {}
   const claimed: Record<string, string> = {}
+  const declined: string[] = []
   for (const entry of RECONCILED) {
     const desired = entry.desired(ctx)
     if (desired === null) continue
@@ -250,7 +310,13 @@ export async function reconcileManagedConfig(
       if (lastWritten[entry.key] !== desired) claimed[entry.key] = desired
       continue
     }
-    if (!isOurs(stored, lastWritten[entry.key])) continue
+    if (
+      !isOurs(stored, lastWritten[entry.key]) &&
+      !isStranded(entry, stored, lastWritten[entry.key], desired)
+    ) {
+      declined.push(entry.key)
+      continue
+    }
     values[entry.key] = desired
     claimed[entry.key] = desired
   }
@@ -259,5 +325,5 @@ export async function reconcileManagedConfig(
   if (Object.keys(claimed).length) {
     await storeJson.merge(effects, { managedConfig: claimed })
   }
-  return Object.keys(values)
+  return { rewritten: Object.keys(values), declined }
 }

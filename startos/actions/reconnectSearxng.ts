@@ -61,7 +61,7 @@ export const reconnectSearxng = sdk.Action.withoutInput(
     }
 
     const written = await reclaimManagedConfig(effects, ctx)
-    const url = String(written[SEARXNG_QUERY_URL_KEY] ?? '')
+    const url = written[SEARXNG_QUERY_URL_KEY] ?? ''
 
     // Open WebUI reads its configuration at start-up, so the restored address
     // only takes effect — and only shows up in the admin settings page — once

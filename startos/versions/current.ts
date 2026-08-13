@@ -1,7 +1,7 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.11.0:2',
+  version: '0.11.0:3',
   releaseNotes: {
     en_US: `Updated Open WebUI to 0.11.0.
 
@@ -12,6 +12,8 @@ This version changes the database schema, so back up Open WebUI before updating,
 Also fixes three things on the StartOS side. Web search with SearXNG now works whichever order you installed the two in — previously, installing SearXNG after Open WebUI had already run left the search address blank, and turning web search on did nothing. And the models Open WebUI uses for audio transcription and document search now come from inside the package, with the remainder downloaded while it installs rather than the first time you use it — so Open WebUI is ready to work as soon as installing finishes. Finally, a connected AI service that moves to a new internal address is reconnected automatically instead of quietly dropping out until you ran Configure Backends again. Anything you have configured yourself is left untouched.
 
 If web search stopped working because the SearXNG address in Open WebUI's settings was edited by hand, that now repairs itself on the next start in most cases. Where the address is one this server cannot safely replace, StartOS prompts you to run the new **Reconnect SearXNG** action, which restores it and resumes keeping it up to date. Previously that state could only be undone by reinstalling.
+
+Also removes a stray OpenAI provider. A fresh install listed \`https://api.openai.com/v1\` under Configure Backends even though nobody had added it — it is Open WebUI's own default — and you had to delete it by hand. Left in place, running Configure Backends for any other reason switched the OpenAI connection on against that keyless address, which then failed every time Open WebUI looked for models. New installs now start with no provider listed. Existing installs are unaffected; delete the row once if it is still there.
 
 Full release notes: https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
     es_ES: `Se ha actualizado Open WebUI a 0.11.0.
@@ -24,6 +26,8 @@ También corrige tres cosas del lado de StartOS. La búsqueda web con SearXNG ah
 
 Si la búsqueda web dejó de funcionar porque la dirección de SearXNG en los ajustes de Open WebUI se editó a mano, en la mayoría de los casos eso se repara solo en el siguiente arranque. Cuando la dirección es una que este servidor no puede reemplazar con seguridad, StartOS le pedirá que ejecute la nueva acción **Reconectar SearXNG**, que la restaura y vuelve a mantenerla al día. Antes, ese estado solo podía deshacerse reinstalando.
 
+También elimina un proveedor de OpenAI que sobraba. Una instalación nueva mostraba \`https://api.openai.com/v1\` en Configurar backends aunque nadie lo hubiera añadido —es el valor por omisión del propio Open WebUI— y había que borrarlo a mano. Si se dejaba ahí, ejecutar Configurar backends por cualquier otro motivo activaba la conexión con OpenAI contra esa dirección sin clave, que luego fallaba cada vez que Open WebUI buscaba modelos. Las instalaciones nuevas ya no muestran ningún proveedor. Las existentes no se ven afectadas: borre la fila una vez si sigue ahí.
+
 Notas de la versión completas: https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
     de_DE: `Open WebUI wurde auf 0.11.0 aktualisiert.
 
@@ -34,6 +38,8 @@ Diese Version ändert das Datenbankschema: Sichern Sie Open WebUI vor dem Update
 Außerdem werden drei Dinge auf StartOS-Seite behoben. Die Websuche mit SearXNG funktioniert jetzt unabhängig davon, in welcher Reihenfolge Sie beide installiert haben — zuvor blieb die Suchadresse leer, wenn SearXNG installiert wurde, nachdem Open WebUI bereits gelaufen war, und das Einschalten der Websuche bewirkte nichts. Und die Modelle, die Open WebUI für Audio-Transkription und Dokumentsuche verwendet, liegen nun im Paket; der Rest wird während der Installation heruntergeladen statt beim ersten Gebrauch — Open WebUI ist damit einsatzbereit, sobald die Installation fertig ist. Und ein verbundener KI-Dienst, der eine neue interne Adresse bekommt, wird automatisch wieder verbunden, statt stillschweigend auszufallen, bis Sie „Backends konfigurieren“ erneut ausgeführt hatten. Was Sie selbst konfiguriert haben, bleibt unangetastet.
 
 Wenn die Websuche nicht mehr funktionierte, weil die SearXNG-Adresse in den Einstellungen von Open WebUI von Hand geändert wurde, behebt sich das in den meisten Fällen beim nächsten Start von selbst. Ist die Adresse eine, die dieser Server nicht gefahrlos ersetzen kann, fordert StartOS Sie auf, die neue Aktion **SearXNG neu verbinden** auszuführen, die sie wiederherstellt und künftig wieder pflegt. Bisher ließ sich dieser Zustand nur durch eine Neuinstallation beheben.
+
+Außerdem wird ein überflüssiger OpenAI-Anbieter entfernt. Eine Neuinstallation führte unter „Backends konfigurieren“ \`https://api.openai.com/v1\` auf, obwohl ihn niemand hinzugefügt hatte — es ist Open WebUIs eigener Standardwert — und man musste ihn von Hand löschen. Blieb er stehen, schaltete jedes Ausführen von „Backends konfigurieren“ die OpenAI-Verbindung auf diese Adresse ohne Schlüssel ein, was dann bei jeder Modellabfrage fehlschlug. Neuinstallationen starten jetzt ohne aufgeführten Anbieter. Bestehende Installationen sind nicht betroffen; löschen Sie die Zeile einmalig, falls sie noch da ist.
 
 Vollständige Versionshinweise: https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
     pl_PL: `Zaktualizowano Open WebUI do wersji 0.11.0.
@@ -46,6 +52,8 @@ Naprawia też trzy rzeczy po stronie StartOS. Wyszukiwanie w sieci z użyciem Se
 
 Jeśli wyszukiwanie w sieci przestało działać, ponieważ adres SearXNG w ustawieniach Open WebUI został zmieniony ręcznie, w większości przypadków naprawi się to samo przy następnym uruchomieniu. Gdy adresu nie da się bezpiecznie zastąpić, StartOS poprosi o uruchomienie nowej akcji **Połącz ponownie z SearXNG**, która go przywraca i znów utrzymuje aktualnym. Wcześniej ten stan można było naprawić tylko przez ponowną instalację.
 
+Usuwa też zbędnego dostawcę OpenAI. Nowa instalacja pokazywała w akcji Konfiguruj backendy adres \`https://api.openai.com/v1\`, choć nikt go nie dodawał — to domyślna wartość samego Open WebUI — i trzeba go było skasować ręcznie. Pozostawiony, powodował, że uruchomienie Konfiguruj backendy z dowolnego innego powodu włączało połączenie z OpenAI pod tym adresem bez klucza, które następnie zawodziło przy każdym pobieraniu listy modeli. Nowe instalacje startują bez żadnego dostawcy. Istniejące pozostają bez zmian — usuń ten wiersz raz, jeśli nadal tam jest.
+
 Pełne informacje o wydaniu: https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
     fr_FR: `Open WebUI a été mis à jour vers la version 0.11.0.
 
@@ -56,6 +64,8 @@ Cette version modifie le schéma de la base de données : sauvegardez Open WebUI
 Elle corrige aussi trois points côté StartOS. La recherche web avec SearXNG fonctionne désormais quel que soit l'ordre dans lequel vous avez installé les deux : auparavant, installer SearXNG après qu'Open WebUI eut déjà démarré laissait l'adresse de recherche vide et activer la recherche web ne changeait rien. Et les modèles qu'Open WebUI utilise pour la transcription audio et la recherche dans les documents sont désormais fournis dans le paquet, le reste étant téléchargé pendant l'installation plutôt qu'à la première utilisation : Open WebUI est donc opérationnel dès que l'installation se termine. Enfin, un service d'IA connecté qui change d'adresse interne est reconnecté automatiquement, au lieu de disparaître silencieusement jusqu'à ce que vous relanciez Configurer les backends. Ce que vous avez configuré vous-même reste intact.
 
 Si la recherche web ne fonctionnait plus parce que l'adresse de SearXNG avait été modifiée à la main dans les réglages d'Open WebUI, cela se répare désormais tout seul au démarrage suivant dans la plupart des cas. Lorsque l'adresse ne peut pas être remplacée sans risque, StartOS vous invite à lancer la nouvelle action **Reconnecter SearXNG**, qui la rétablit et la tient de nouveau à jour. Auparavant, seule une réinstallation permettait de sortir de cet état.
+
+Supprime également un fournisseur OpenAI superflu. Une nouvelle installation affichait \`https://api.openai.com/v1\` dans Configurer les backends alors que personne ne l'avait ajouté — c'est la valeur par défaut d'Open WebUI lui-même — et il fallait le supprimer à la main. Laissé en place, il faisait qu'exécuter Configurer les backends pour toute autre raison activait la connexion OpenAI vers cette adresse sans clé, laquelle échouait ensuite à chaque recherche de modèles. Les nouvelles installations démarrent désormais sans aucun fournisseur. Les installations existantes ne changent pas : supprimez la ligne une fois si elle est encore là.
 
 Notes de version complètes : https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
   },

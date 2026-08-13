@@ -89,11 +89,16 @@ Everything else Open WebUI calls `PersistentConfig` lives in the `config` table 
 | ------------------------------ | ---------- | -------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `ollama.enable`                | seed       | `false`                                                        | Keep Ollama opt-in until Configure Backends turns it on           |
 | `openai.enable`                | seed       | `false`                                                        | Keep OpenAI-compatible backends opt-in                            |
+| `openai.api_base_urls`         | seed       | `[]`                                                           | Clear upstream's default `https://api.openai.com/v1` entry        |
+| `openai.api_keys`              | seed       | `[]`                                                           | Keep the key array aligned with the cleared URL array             |
 | `ui.enable_community_sharing`  | seed       | `false`                                                        | Disable community sharing                                         |
 | `web.search.engine`            | seed       | `searxng`                                                      | Default web-search backend (only used if web search is turned on) |
 | `web.search.searxng_query_url` | reconciled | `http://10.0.3.1:<assigned port>/search?q=<query>&format=json` | Endpoint Open WebUI queries when web search is enabled            |
 
 - **seed** — written once, during install, and never asserted again. A starting point the user owns from then on.
+
+> **Why the `openai.*` arrays are seeded empty.** With no `OPENAI_API_BASE_URL(S)` set, upstream splits an empty string and rewrites the blank entry to `https://api.openai.com/v1`, so `seed_defaults` writes that URL into `webui.db` on the install boot. `deriveView` matches it against no known backend and reports it as a user-added provider, so **Configure Backends showed a prefilled OpenAI row on every fresh install** that the user had to delete by hand. Leaving it was not merely untidy: the action derives `openai.enable` from the number of base URLs, so running it for any other reason — connecting Ollama — would enable the OpenAI API against a keyless endpoint and fail on every model-list fetch. Seeding `[]` starts the list genuinely empty; `[]` is a state Configure Backends already writes when nothing is selected.
+
 - **reconciled** — re-asserted on every start by `setupMain`, before the daemon launches, because the correct value can change under the user: a dependency installed after Open WebUI's first launch, or an assigned bridge port that moves. A value the user has changed is never overwritten — the last value this package wrote is recorded in `store.json`, and anything that doesn't match it (and isn't empty) is left alone permanently.
 
   One transitional exception (`isStranded`, tracked for removal in `TODO.md`): a key with **no ownership record at all** — only possible on a pre-`0.11.0:1` install, since every write path since then claims its key — is taken back once if the stored value names this server's own SearXNG (the bridge host, or `searxng.startos`). Any other value is the user's and stays theirs.

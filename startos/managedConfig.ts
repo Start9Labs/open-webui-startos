@@ -70,10 +70,25 @@ export async function resolveManagedContext(
  * Written at install only. Open WebUI defaults `ollama.enable` and
  * `openai.enable` to true, so seeding them false is what keeps backends
  * opt-in until the user picks them in Configure Backends.
+ *
+ * The empty `openai.*` arrays clear a provider nobody asked for. With no
+ * `OPENAI_API_BASE_URL(S)` in the environment, upstream splits an empty string
+ * and rewrites the resulting blank entry to `https://api.openai.com/v1`
+ * (config.py), so `seed_defaults` puts that URL in `webui.db` on the install
+ * boot. `deriveView` then matches it against no known backend and reports it as
+ * a user-added provider, which Configure Backends renders as a prefilled row on
+ * every fresh install. Worse than the stray row: the action derives
+ * `openai.enable` from the number of base URLs, so running it for any reason —
+ * connecting Ollama, say — while that row is still there enables the OpenAI API
+ * pointed at a keyless endpoint. Seeding the arrays empty means the list starts
+ * genuinely empty. Configure Backends already writes `[]` when nothing is
+ * selected, so this is not a state the daemon hasn't seen.
  */
 const SEED: ConfigMap = {
   'ollama.enable': false,
   'openai.enable': false,
+  'openai.api_base_urls': [],
+  'openai.api_keys': [],
   'ui.enable_community_sharing': false,
   'web.search.engine': 'searxng',
 }

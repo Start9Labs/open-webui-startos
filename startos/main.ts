@@ -2,20 +2,14 @@ import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
 import { daemonEnv, mainMounts, uiPort } from './utils'
-import {
-  ensurePublicMounted,
-  KNOWN_OPENAI,
-  publicCredentialsFile,
-  resolveBaseUrls,
-} from './backends'
+import { resolveBaseUrls } from './backends'
 import {
   reconcileManagedConfig,
-  repointBackendUrls,
   resolveManagedContext,
   SEARXNG_QUERY_URL_KEY,
+  syncBackendState,
 } from './managedConfig'
 import { reconnectSearxng } from './actions/reconnectSearxng'
-import { adminExists, ConfigMap, webuiConfig, writeConfig } from './webuiConfig'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting Open WebUI!'))
@@ -27,71 +21,10 @@ export const main = sdk.setupMain(async ({ effects }) => {
     throw new Error('store.json WEBUI_SECRET_KEY not found')
   }
 
-  // Resolve each backend's dial address from its binding's live bridge address
-  // via `.const()`: a backend install/uninstall/port-change heals with a single
-  // main restart, and a plain dependency update (assigned port unchanged) never
-  // restarts. Each entry is null while its backend is absent.
-  const resolved = await resolveBaseUrls(effects, 'const')
-
-  // Keep public-credential backends' keys in sync with what the dependency
-  // publishes. Read each key with `.once()` (a snapshot, not a subscription):
-  // setupMain already re-reads on every start, so a rotated key is picked up on
-  // the next restart without main subscribing to — and restarting on — every
-  // key rotation. (vLLM is currently the only public-credential backend.)
-  const view = await webuiConfig.read(effects, resolved).once()
-  const urls = [...view.openaiBaseUrls]
-  const keys = [...view.openaiApiKeys]
-  const ollamaUrls = [...view.ollamaBaseUrls]
-
-  // Repoint first: the key re-sync below finds a backend's slot by looking up
-  // its resolved URL, which a moved bridge port would otherwise no longer match.
-  const owned = (await storeJson.read((s) => s.managedBackendUrls).once()) ?? {}
-  const repointed = repointBackendUrls(resolved, owned, ollamaUrls, urls)
-
-  let changed = false
-  for (const b of KNOWN_OPENAI) {
-    if (b.keySource !== 'public') continue
-    if (!view.connectedIds.includes(b.id)) continue
-    const bUrl = resolved[b.id]
-    if (!bUrl) continue
-    const idx = urls.indexOf(bUrl)
-    if (idx < 0) continue
-    let freshKey: string | null = null
-    try {
-      await ensurePublicMounted(effects, b.id)
-      freshKey = await publicCredentialsFile(b.id)
-        .read((c) => c.apiKey)
-        .once()
-    } catch {
-      freshKey = null
-    }
-    if (!freshKey && b.keyRequired) {
-      throw new Error(
-        `${b.title} backend is enabled but its API key could not be read ` +
-          `from ${b.id}:public/credentials.json. Make sure ${b.title} is ` +
-          `installed, running, and at version ${b.versionRange} or newer.`,
-      )
-    }
-    if (freshKey && keys[idx] !== freshKey) {
-      keys[idx] = freshKey
-      changed = true
-    }
-  }
-  // Defense-in-depth for issue #15: never write the config table before an
-  // admin exists. In practice none of these can be true until a backend has
-  // been wired (which itself requires an admin), so the skip is effectively
-  // unreachable — but it makes the invariant explicit and, unlike a throw,
-  // can never block daemon startup.
-  const backendWrites: ConfigMap = {}
-  if (repointed.ollama) backendWrites['ollama.base_urls'] = ollamaUrls
-  if (repointed.openai) backendWrites['openai.api_base_urls'] = urls
-  if (changed) backendWrites['openai.api_keys'] = keys
-  if (Object.keys(backendWrites).length && (await adminExists(effects))) {
-    await writeConfig(effects, backendWrites)
-  }
-  if (Object.keys(repointed.claims).length) {
-    await storeJson.merge(effects, { managedBackendUrls: repointed.claims })
-  }
+  // `.const()` on the dial addresses is what makes this reactive: a backend
+  // install/uninstall/port-change heals with a single main restart, and a plain
+  // dependency update (assigned port unchanged) never restarts.
+  await syncBackendState(effects, await resolveBaseUrls(effects, 'const'))
 
   // Re-assert the config values whose correct setting can change under the
   // user. `.const()` on the dependency addresses is what makes this reactive:

@@ -52,7 +52,7 @@ export type BackendsView = {
    */
   customProviders: CustomProvider[]
   /**
-   * Raw stored arrays, exposed so setupMain can patch a single slot in place —
+   * Raw stored arrays, exposed so `syncBackendState` can patch a slot in place —
    * a public-credential backend (e.g. vLLM) rotating its key, or a backend
    * whose assigned bridge port has moved. Patching by index keeps
    * `openaiApiKeys` aligned with `openaiBaseUrls`.

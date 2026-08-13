@@ -1,8 +1,20 @@
 import { T } from '@start9labs/start-sdk'
-import { KNOWN_BACKENDS, ResolvedBaseUrls } from './backends'
+import {
+  ensurePublicMounted,
+  KNOWN_BACKENDS,
+  KNOWN_OPENAI,
+  publicCredentialsFile,
+  ResolvedBaseUrls,
+} from './backends'
 import { storeJson } from './fileModels/store.json'
 import { sdk } from './sdk'
-import { ConfigMap, readConfig, writeConfig } from './webuiConfig'
+import {
+  adminExists,
+  ConfigMap,
+  readConfig,
+  webuiConfig,
+  writeConfig,
+} from './webuiConfig'
 import { mainHostId as searxngHostId } from 'searxng-startos/startos/interfaces'
 import { uiPort as searxngUiPort } from 'searxng-startos/startos/utils'
 
@@ -164,6 +176,72 @@ export function repointBackendUrls(
   }
 
   return { ollama, openai, claims }
+}
+
+/**
+ * Re-assert the backend wiring against the live bridge addresses: repoint the
+ * entries whose assigned port has moved, and refresh the keys public-credential
+ * backends publish. Call from setupMain, before the daemon starts.
+ */
+export async function syncBackendState(
+  effects: T.Effects,
+  resolved: ResolvedBaseUrls,
+): Promise<void> {
+  // `.once()` on each key is a snapshot, not a subscription: setupMain re-reads
+  // on every start, so a rotated key is picked up on the next restart without
+  // main restarting on every rotation. (vLLM is the only such backend today.)
+  const view = await webuiConfig.read(effects, resolved).once()
+  const urls = [...view.openaiBaseUrls]
+  const keys = [...view.openaiApiKeys]
+  const ollamaUrls = [...view.ollamaBaseUrls]
+
+  // Repoint first: the key re-sync below finds a backend's slot by looking up
+  // its resolved URL, which a moved bridge port would otherwise no longer match.
+  const owned = (await storeJson.read((s) => s.managedBackendUrls).once()) ?? {}
+  const repointed = repointBackendUrls(resolved, owned, ollamaUrls, urls)
+
+  let changed = false
+  for (const b of KNOWN_OPENAI) {
+    if (b.keySource !== 'public') continue
+    if (!view.connectedIds.includes(b.id)) continue
+    const bUrl = resolved[b.id]
+    if (!bUrl) continue
+    const idx = urls.indexOf(bUrl)
+    if (idx < 0) continue
+    let freshKey: string | null = null
+    try {
+      await ensurePublicMounted(effects, b.id)
+      freshKey = await publicCredentialsFile(b.id)
+        .read((c) => c.apiKey)
+        .once()
+    } catch {
+      freshKey = null
+    }
+    if (!freshKey && b.keyRequired) {
+      throw new Error(
+        `${b.title} backend is enabled but its API key could not be read ` +
+          `from ${b.id}:public/credentials.json. Make sure ${b.title} is ` +
+          `installed, running, and at version ${b.versionRange} or newer.`,
+      )
+    }
+    if (freshKey && keys[idx] !== freshKey) {
+      keys[idx] = freshKey
+      changed = true
+    }
+  }
+
+  // Issue #15: never write the config table before an admin exists. A skip
+  // rather than a throw, so this can never block daemon startup.
+  const writes: ConfigMap = {}
+  if (repointed.ollama) writes['ollama.base_urls'] = ollamaUrls
+  if (repointed.openai) writes['openai.api_base_urls'] = urls
+  if (changed) writes['openai.api_keys'] = keys
+  if (Object.keys(writes).length && (await adminExists(effects))) {
+    await writeConfig(effects, writes)
+  }
+  if (Object.keys(repointed.claims).length) {
+    await storeJson.merge(effects, { managedBackendUrls: repointed.claims })
+  }
 }
 
 /**

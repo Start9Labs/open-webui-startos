@@ -23,8 +23,8 @@ import {
  * automatically, plus the helpers that detect which are installed and read the
  * API keys they publish. This is the single source of truth for backend
  * connection details — the Configure Backends action, dependency wiring, and
- * setupMain's key re-sync all derive from it. Adding a new compatible service
- * is a one-line addition here.
+ * `syncBackendState` all derive from it. Adding a new compatible service is a
+ * one-line addition here.
  */
 
 /**

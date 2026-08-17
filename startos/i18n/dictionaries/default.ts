@@ -31,6 +31,14 @@ const dict = {
   'local models': 27,
   "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before configuring backends.": 28,
   "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before resetting the password.": 29,
+  'Preparing Open WebUI': 30,
+  'Updated Open WebUI configuration': 31,
+  'Reconnect SearXNG': 32,
+  "Point web search back at SearXNG. Use this if the search address was changed by hand and Open WebUI stopped keeping it up to date — it restores the correct address and resumes maintaining it. Doesn't affect your other settings.": 33,
+  "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before reconnecting SearXNG.": 34,
+  "SearXNG isn't installed on this server, so there is no address to reconnect to. Install SearXNG and start it, then run this action again.": 35,
+  'Web search is pointed back at SearXNG, and Open WebUI is restarting. The address below is now managed for you again — leave it alone and it will stay correct.': 36,
+  'The web search address is one this server does not manage, so searches may not reach SearXNG. Reconnect SearXNG to restore it.': 37,
 } as const
 
 export type I18nKey = keyof typeof dict

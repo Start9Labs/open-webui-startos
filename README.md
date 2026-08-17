@@ -9,9 +9,9 @@
 > upstream documentation is accurate and fully applicable — see the
 > Documentation section of `instructions.md` for links.
 
-[Open WebUI](https://github.com/open-webui/open-webui) is an extensible, self-hosted AI interface for chatting with large language models. On StartOS it connects to Ollama, vLLM, llama.cpp, Maple Proxy, or any external OpenAI-compatible API. This repository packages it for [StartOS](https://github.com/Start9Labs/start-os).
+[Open WebUI](https://github.com/open-webui/open-webui/) is a chat interface for large language models. This package wires it to the LLM backends already on your server, keeps those connections pointing at the right addresses as they move, and closes off the parts of upstream that reach out to the internet by default.
 
-- **Upstream repo:** <https://github.com/open-webui/open-webui>
+- **Upstream repo:** <https://github.com/open-webui/open-webui/>
 - **Wrapper repo:** <https://github.com/Start9Labs/open-webui-startos>
 
 ---
@@ -29,211 +29,170 @@
 - [Health Checks](#health-checks)
 - [Backups and Restore](#backups-and-restore)
 - [Limitations and Differences](#limitations-and-differences)
-- [Troubleshooting](#troubleshooting)
 - [Quick Reference for AI Consumers](#quick-reference-for-ai-consumers)
 
 ---
 
 ## Image and Container Runtime
 
-The upstream image is used unmodified, with the stock entrypoint. One long-running subcontainer serves the app; the rest exist only for the length of an install or a single config read.
+One upstream image, unmodified.
 
 | Property      | Value                           |
 | ------------- | ------------------------------- |
 | Image         | `ghcr.io/open-webui/open-webui` |
 | Architectures | x86_64, aarch64                 |
-| Entrypoint    | Upstream default                |
+| Entrypoint    | Upstream's                      |
 
-| Subcontainer            | Lifetime            | Purpose                                                |
-| ----------------------- | ------------------- | ------------------------------------------------------ |
-| `open-webui-sub`        | The running service | The `primary` daemon — this is the one to `attach` to  |
-| `open-webui-bootstrap`  | Install only        | Boots the app once to create `webui.db` and its schema |
-| _(unnamed temporaries)_ | Seconds             | Seed the model cache; run `python3` against `webui.db` |
+| Subcontainer           | Purpose                                                 |
+| ---------------------- | ------------------------------------------------------- |
+| `open-webui-sub`       | The `primary` daemon — the one to `attach` to           |
+| `open-webui-bootstrap` | Temporary; the install-time first boot                  |
+| `webui-model-seed`     | Temporary; copies the baked model cache onto the volume |
 
 ## Volume and Data Layout
 
-Two volumes. Everything Open WebUI itself writes lives in one; the package's own bookkeeping is kept out of it in the other.
+Two volumes, and one of them never enters a container.
 
-| Volume       | Mount Point         | Purpose                                                   |
-| ------------ | ------------------- | --------------------------------------------------------- |
-| `open-webui` | `/app/backend/data` | Application data, user settings, chat history, `webui.db` |
-| `startos`    | — (host side)       | `store.json`; never mounted into the container            |
+| Volume       | Mount Point         | Purpose                                                               |
+| ------------ | ------------------- | --------------------------------------------------------------------- |
+| `open-webui` | `/app/backend/data` | `webui.db`, uploaded documents, the vector store, and the model cache |
+| `startos`    | — (host side)       | `store.json`; never mounted into a container                          |
 
-The `open-webui` volume is also mounted at `/mnt/data` during install only, so the image's baked model cache and the volume are both visible while the cache is copied across.
+**Mounting the volume hides something the image ships.** Open WebUI bakes a 265 MB model cache into `/app/backend/data/cache` — embedding models, Whisper, and tiktoken vocabularies — and the volume covers exactly that path, so on a fresh install all of it is invisible and every model would be re-fetched from HuggingFace on demand. A temporary container therefore mounts the same volume a second time out of the way and copies the cache across before anything else runs. It copies without overwriting, so a model you have since downloaded is left alone and later updates are a no-op.
 
 ## File Models
 
-Open WebUI keeps almost all of its configuration inside its own SQLite database rather than in a config file, which decides how this package writes settings and what happens to yours.
+One model, on the `startos` volume. **Open WebUI's own configuration is not a file** — it lives in `webui.db`, and the package writes to that database directly.
 
-| File         | Format | Modelled                              | Written by                                                  |
-| ------------ | ------ | ------------------------------------- | ----------------------------------------------------------- |
-| `store.json` | JSON   | Yes — `FileHelper.json`               | Install, `setupMain`, and the actions                       |
-| `webui.db`   | SQLite | No — `python3` in a temp subcontainer | Install, `setupMain`, Configure Backends, Reconnect SearXNG |
+| File         | Format | Modelled                | Written by                            |
+| ------------ | ------ | ----------------------- | ------------------------------------- |
+| `store.json` | JSON   | Yes — `FileHelper.json` | Install, every start, and the actions |
 
-**`store.json`** holds `WEBUI_SECRET_KEY` plus the package's ownership records: `managedConfig` (the last value written for each reconciled `webui.db` key) and `managedBackendUrls` (backend id → the base URL last written for it). Those records are the whole ownership mechanism — without them the package cannot tell a value it set from one you changed, so they are on a backed-up volume and survive restore.
+| Key                  | Purpose                                                               |
+| -------------------- | --------------------------------------------------------------------- |
+| `WEBUI_SECRET_KEY`   | A 64-character secret signing every session, generated at install     |
+| `managedConfig`      | The last value this package wrote for each database key it reconciles |
+| `managedBackendUrls` | The last URL it wrote for each backend, per backend                   |
 
-**`webui.db` is not a file model.** It is the application's own SQLite database, read and written by a short-lived subcontainer running `python3` from the same image, so the client stack always matches the daemon's. Writes refuse to act when the file is absent rather than creating one — an empty database is inherited by Alembic and corrupts the install (issue #15).
+The last two are ownership bookkeeping, and they are what make the reconciliation safe: they let the package tell a value it still owns from one you have changed since.
 
-### Environment versus database
+### Why configuration goes into the database, not the environment
 
-An environment variable is a **one-shot seed here, never an override.** Since Open WebUI 0.10, `Config.seed_defaults` writes each `PersistentConfig` key into the `config` table on the first launch that finds it missing, and the stored row wins from then on whether or not you ever edited it.
+Since 0.10, Open WebUI reads a PersistentConfig key from the environment **only when no row exists for it yet**. After the first launch the stored row wins for good. An environment variable is therefore a one-shot seed and never an override — so anything this package has to be able to change later has to be written into `webui.db` instead.
 
-So the environment carries only variables Open WebUI re-reads on every launch — `WEBUI_SECRET_KEY`, `CORS_ALLOW_ORIGIN`, `WEBUI_SESSION_COOKIE_SECURE`, `ENABLE_VERSION_UPDATE_CHECK`, `ENABLE_ADMIN_ANALYTICS`. Adding a `PersistentConfig` variable there would silently do nothing after first launch. Everything else is written to `webui.db` under one of two policies:
+That splits the settings into three groups:
 
-| Key                            | Policy     | Value                                             |
-| ------------------------------ | ---------- | ------------------------------------------------- |
-| `ollama.enable`                | seed       | `false` — keeps Ollama opt-in                     |
-| `openai.enable`                | seed       | `false` — keeps OpenAI-compatible backends opt-in |
-| `ui.enable_community_sharing`  | seed       | `false`                                           |
-| `web.search.engine`            | seed       | `searxng`                                         |
-| `openai.api_base_urls`         | seed       | `[]` — clears an entry upstream adds on its own   |
-| `openai.api_keys`              | seed       | `[]` — keeps the key array aligned with the above |
-| `web.search.searxng_query_url` | reconciled | SearXNG's resolved bridge address                 |
+**Environment, re-read every launch** — the session secret, permissive CORS, and three switches held off: the version-update check, admin analytics, and insecure session cookies.
 
-- **seed** — written once during install, never asserted again. A starting point you own from then on.
+**Seeded once at install** and yours from then on: both backend types start disabled, the OpenAI provider arrays start empty, community sharing is off, and the search engine is set to SearXNG. Upstream defaults both backend types to enabled, which would have Open WebUI dialling backends nobody selected. The empty arrays matter for a subtler reason: with no OpenAI base URL in the environment, upstream substitutes its own hosted endpoint and stores that, which would then show up as a pre-filled provider on every fresh install.
 
-  The two empty `openai.*` arrays are a seed that clears rather than sets. With no `OPENAI_API_BASE_URL(S)` in the environment, upstream splits an empty string and rewrites the blank entry to `https://api.openai.com/v1`, so `seed_defaults` writes that URL into `webui.db` on the install boot and `deriveView` reports it as a provider you added. It is not merely a stray row: Configure Backends derives `openai.enable` from the number of base URLs, so running it for any other reason — connecting Ollama — would enable the OpenAI API against a keyless endpoint. Seeding `[]` starts the list genuinely empty, and `[]` is a state Configure Backends already writes when nothing is selected.
-
-- **reconciled** — re-asserted by `setupMain` before the daemon starts, because the correct value can change underneath you: SearXNG installed after first launch, or its assigned bridge port moving.
-
-**A reconciled value you have changed is never overwritten.** The package compares what is stored against what it last wrote (`managedConfig`); anything else non-empty is left alone permanently. One transitional exception: a key with no ownership record at all — only possible on an install predating `0.11.0:1`, since every write path since then records its key — is taken back once if the stored value names this server's own SearXNG, by bridge host or by `searxng.startos`.
-
-Because that decision is one-way, [Reconnect SearXNG](#actions) exists to hand the key back.
-
-### Backend URLs
-
-`ollama.base_urls` and `openai.api_base_urls` are arrays mixing entries this package wrote with providers you added by hand, so ownership is decided **per entry** against `managedBackendUrls`. Several backends share the `10.0.3.1` bridge host and differ only by port, so nothing in a URL identifies which backend it belongs to — the recorded value is what makes the attribution.
-
-`setupMain` repoints an entry whose assigned bridge port has moved, in place, so `openai.api_keys` stays aligned by index. An entry with no record is claimed only when it already equals the resolved address, so an install predating this bookkeeping heals from its next Configure Backends run rather than having a guess imposed on it. An uninstalled backend keeps its entry until you remove it.
+**Reconciled on every start** — currently the SearXNG web-search endpoint. Its correct value changes under you when SearXNG is installed, or when its assigned bridge port moves, so the package re-asserts it. **A value you have changed by hand is never overwritten**; instead the package raises a task rather than fighting you for the key.
 
 ## Dependencies
 
-Every dependency is **optional** — Open WebUI installs and runs without any of them, though you cannot chat until at least one LLM backend is connected. A backend becomes an active running-dependency only when selected in Configure Backends, which calls `setDependencies` so StartOS keeps it running.
+Five optional packages, and **which ones are declared follows what is actually wired up** rather than what is installed.
 
-Base URLs are resolved over the local service bridge (`10.0.3.1:<assigned external port>`) from each dependency's exported host-id and port constants via `sdk.host.getBridgeAddress`. The ports below are the dependency's own internal bind ports, not the external bridge ports. Each backend's minimum version is the `versionRange` declared alongside it in `startos/backends.ts`.
+| Dependency    | Role                                                   |
+| ------------- | ------------------------------------------------------ |
+| `ollama`      | Local LLMs over Ollama's native API                    |
+| `vllm`        | Local LLMs over an OpenAI-compatible API               |
+| `llama-cpp`   | Local GGUF models over an OpenAI-compatible API        |
+| `maple-proxy` | Maple's privacy-preserving OpenAI-compatible inference |
+| `searxng`     | A self-hosted web-search backend                       |
 
-| Dependency  | Health Check  | Internal Port        | Notes                                                                 |
-| ----------- | ------------- | -------------------- | --------------------------------------------------------------------- |
-| Ollama      | `primary`     | `11434` (native API) | Ollama native API; no key                                             |
-| vLLM        | `primary`     | `8000` (`/v1`)       | OpenAI-compatible; API key read automatically from `vllm:public`      |
-| llama.cpp   | `primary`     | `8080` (`/v1`)       | OpenAI-compatible; keyless over the bridge (auth is at its own proxy) |
-| Maple Proxy | `maple-proxy` | `8080` (`/v1`)       | OpenAI-compatible privacy proxy; placeholder key                      |
-| SearXNG     | —             | `80`                 | Self-hosted web search                                                |
+A backend becomes a `running` dependency the moment you select it in Configure Backends, and stops being one when you deselect it. Nothing here is required, and Open WebUI runs perfectly well pointed only at a remote provider you configure yourself.
 
-SearXNG is the exception to the mechanism above: it is **not** wired through Configure Backends. Install it, then enable web search in Open WebUI's own **Settings → Web Search** under **Admin** — the engine and query URL are already filled in, in either install order.
+**Addresses are resolved over the LXC bridge and repaired when they move.** A backend install, uninstall, or port change re-runs the package's setup and heals the stored URL with a single restart; a routine dependency update, where the assigned port does not change, restarts nothing.
+
+**Ownership is decided per array entry, not per setting.** Open WebUI keeps all OpenAI-compatible providers in one list, mixing this package's entries with any you add by hand — and several backends share the same bridge host, differing only by port, so nothing about a URL identifies it. `managedBackendUrls` is what attributes each one. An entry the package has no record for is claimed only if it already matches the resolved address, so an older install starts healing from the next Configure Backends run rather than having a guess imposed on it.
 
 ## Network Access and Interfaces
 
-One interface, serving the web UI. Nothing is exported for dependent services.
+One interface, serving the chat UI and Open WebUI's API.
 
-| Interface | Id   | Type | Port | Description               |
-| --------- | ---- | ---- | ---- | ------------------------- |
-| Web UI    | `ui` | ui   | 8080 | Main Open WebUI interface |
+| Interface | Id   | Type | Port | Description                     |
+| --------- | ---- | ---- | ---- | ------------------------------- |
+| Web UI    | `ui` | ui   | 8080 | The web interface of Open WebUI |
 
 The port is bound on the `ui-multi` MultiHost and is not masked.
 
 ## Installation and First-Run Flow
 
-Install does three things before the service ever starts normally, and the last of them is what lets every other code path assume a working database.
+**Install runs Open WebUI once, to completion, before the service ever starts.** Only that first launch creates `webui.db` and its schema — the migrations run at import and the config table is seeded straight after — so doing it during install is what lets every later write assume the table is there, with no first-run branching anywhere else in the package.
 
-1. **Seed the model cache.** The image bakes a 265 MB cache into `/app/backend/data/cache` — two text-embedding models used for document search, Whisper for audio transcription, and the tiktoken vocabularies. That directory is the only thing in `/app/backend/data` in the image, and it is exactly where the `open-webui` volume mounts at runtime, so the mount would hide all of it. The cache is copied onto the volume with `cp -an`, which never overwrites a model you have since downloaded.
+It is allowed ten minutes: a fresh database plus the embedding model load is slow on a slow disk. Failing that fails the install and rolls it back, which is the right outcome, because everything downstream assumes this boot happened.
 
-2. **Generate `WEBUI_SECRET_KEY`** into `store.json`.
-
-3. **Boot Open WebUI once to completion, then shut it down.** This is the only thing that creates `webui.db` and its schema: Alembic runs at import and the config table is seeded immediately after. Doing it here is why no other code path carries first-run branching. If it fails or times out, init fails and StartOS rolls the install back.
-
-**Install needs network.** Step 1 does not make the server independent of HuggingFace: `sentence_transformers` resolves the embedding repo's `main` revision and pulls a 30-file snapshot — more formats than the image bakes — which the step-3 boot completes. What the cache copy buys is that Whisper and tiktoken, which load lazily on first use and are not covered by that boot, are already present, and that every later start resolves all 30 files from cache instantly.
-
-**Order matters for backends.** Open the Web UI and register your admin account _before_ running Configure Backends; the action refuses to run until an admin exists.
+No credential is shown. **The first account created in the web UI becomes the administrator**, and nothing else is required — though a fresh install has no LLM backend connected, so the first thing to do is run Configure Backends.
 
 ## Actions
 
-All three actions are user-facing and runnable whether the service is running or stopped.
+Three actions, all available whether or not the service is running.
 
 ### Configure Backends
 
-Connects Open WebUI to LLM backends. Run it after installing a backend service, or when you want to add an external OpenAI-compatible provider.
+Selects which LLM backends Open WebUI connects to — the installed StartOS ones, and any OpenAI-compatible provider you add by hand.
 
-- **What it changes:** `ollama.*` and `openai.*` keys in `webui.db`, the recorded URLs in `store.json`, and the package's running-dependency set.
-- **Cost:** seconds, then a restart of Open WebUI.
-- **Repeat safety:** safe to re-run; it rewrites the full selection each time, so deselecting a backend removes it.
-- **What happens next:** the service restarts and the newly selected backends appear as model sources.
-- **Guard:** refuses to run until a first admin account exists — see [Installation and First-Run Flow](#installation-and-first-run-flow).
-
-It auto-detects which compatible AI services are installed and presents them as a multiselect, filling in each one's bridge address and, where available, its API key — read from the dependency's published `public/credentials.json` for vLLM, or a placeholder for the keyless backends. A separate list takes arbitrary external providers.
+- **What it changes:** the backend URL and key arrays in `webui.db`, the enable flags derived from them, the package's dependencies, and the ownership records in `store.json`.
+- **Cost:** seconds, then a restart.
+- **Repeat safety:** idempotent. Deselecting a backend removes this package's entry for it; providers you added yourself are left alone.
+- **Keys are handled per backend.** Some publish a credential the package can read; others get a non-empty placeholder, because Open WebUI rejects an empty key field — replace it if the provider needs a real one.
 
 ### Reconnect SearXNG
 
-Takes `web.search.searxng_query_url` back under management after you have edited it in Open WebUI's admin settings. Run it when the [Reconnect SearXNG task](#tasks) appears.
+Points web search back at SearXNG and resumes maintaining the address.
 
-- **What it changes:** the reconciled key in `webui.db`, and its ownership record in `store.json`.
+- **When to run it:** the search address was changed by hand and Open WebUI stopped keeping it current. This is what the task below asks for.
+- **What it changes:** the search endpoint in `webui.db`, and the ownership record that makes the package own it again.
 - **Cost:** seconds, then a restart.
-- **Repeat safety:** idempotent.
-- **Outputs:** the restored address, copyable.
-- **Guards:** refuses before a first admin account exists, and when SearXNG is not installed — there is no address to restore, and fabricating one would be worse than saying so.
-
-**Why it has to exist.** Reconciliation only rewrites a value that is absent, empty, or byte-identical to what the package last wrote — a deliberate rule so your own endpoint is never clobbered. But that decision is one-way: the only state that would release the key back is empty, and Open WebUI's admin form will not save it, because the Searxng Query URL input is marked `required` upstream and sits in a form with native validation. Editing the field once therefore ended the automatic address handling permanently, with a `sqlite3` command over SSH or a reinstall as the only recoveries. This action is the supported recovery, and the only caller allowed to bypass the ownership test — it runs solely on an explicit request. It deliberately does **not** rewrite the seeded values, which are one-time starting points you own; doing so would silently reset your backend choices.
-
-It reclaims every reconciled key, and the SearXNG URL is currently the only one — a second would mean revisiting this action's name, its SearXNG-specific guard, and the task condition together.
+- **Repeat safety:** idempotent, and it touches nothing else.
 
 ### Reset Admin Password
 
-Generates a new random password for the first admin user. Run it when locked out.
+Generates a new password for the admin account. Run it when locked out.
 
-- **What it changes:** the first admin user's password hash in `webui.db`.
-- **Repeat safety:** safe to re-run; each run generates a fresh password and invalidates the previous one.
-- **Outputs:** the new password, masked and copyable. It is not recoverable afterwards.
+- **Cost:** seconds.
+- **Repeat safety:** safe to re-run; each run generates a fresh password.
+- **Outputs:** the new password. It is not recoverable afterwards.
 
 ## Tasks
 
-The package raises one task, and only in a situation you cannot otherwise detect: web search silently not reaching your SearXNG.
+One task, and it is raised by a condition rather than at install.
 
-| Task              | Severity    | Raised when                                                                  | Cleared when                                                               |
-| ----------------- | ----------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Reconnect SearXNG | `important` | The reconcile pass declines the SearXNG query URL because it was hand-edited | The action runs, SearXNG is uninstalled, or the value is corrected by hand |
+| Task              | Severity    | Raised when                                                  | Cleared when                                                               |
+| ----------------- | ----------- | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Reconnect SearXNG | `important` | The stored search address is one this server does not manage | The action runs, SearXNG is uninstalled, or the value is corrected by hand |
 
-`important` rather than `critical` deliberately: a wrong search endpoint should not block the service from starting. StartOS drops a task with no `when` as soon as its action runs, so the package's explicit clear covers only the other two exits.
+This is the visible half of the never-overwrite rule: rather than reclaim a key you have edited, the package tells you the address may not reach SearXNG and offers to restore it. It clears itself on every exit, not only through the action.
 
 ## Health Checks
 
-One check, on the primary daemon.
+One check, on the only daemon.
 
-| Check                     | Method                          | Grace Period |
-| ------------------------- | ------------------------------- | ------------ |
-| `primary` "Web Interface" | HTTP `GET /health` on port 8080 | 120 seconds  |
+| Check     | Displayed       | Method                          | Grace |
+| --------- | --------------- | ------------------------------- | ----- |
+| `primary` | "Web Interface" | `GET /health` on the local port | 2 min |
 
-The long grace period is not padding: `uvicorn` binds the socket before the FastAPI app finishes its lifespan startup, so a port check would report ready well before the app serves. `/health` flips only when it actually is.
+**It is a request rather than a port probe, deliberately.** uvicorn binds the socket well before the FastAPI app finishes starting, so a port check would report ready while the app is still coming up. `/health` flips only when it is actually serving.
 
-**Failing after the grace period** means the app is not serving — check the service logs for an Alembic migration error or a corrupt `webui.db`, not for a networking fault. **Failing on a first start after restore** is usually still the migration running against a large database; give it time before intervening.
+The two minutes of grace covers the model load. A failure after that is the app — most often a backend it cannot reach or a configuration value it rejects, both named in the service logs.
 
 ## Backups and Restore
 
-Both volumes are copied wholesale — `sdk.Backups.ofVolumes('open-webui', 'startos')`. There is no database dump step: `webui.db` is captured as a file along with the rest of the volume.
+Both volumes are copied wholesale — `sdk.Backups.ofVolumes('open-webui', 'startos')`. No dump step and nothing excluded.
 
-- **Included:** all application data, chat history, user accounts, and the model cache (`open-webui`); the secret key and ownership records (`startos`).
-- **Restore:** everything comes back, including logins, and no reconfiguration is needed. Because `store.json` is included, the package still knows which config values and backend URLs are its own, so reconciliation resumes rather than restarting from a guess.
+- **Included:** `webui.db` with every account, chat, and setting; uploaded documents and the vector store; the model cache; and `store.json` with the session secret and the ownership records.
+- **Size:** the model cache alone is a few hundred megabytes, and grows with each model Open WebUI downloads.
+- **Restore:** complete, and sessions survive because the secret does. Backend addresses are re-resolved on the first start, so a backend that now sits on a different port is repaired rather than left broken.
 
 ## Limitations and Differences
 
-1. **A backend is required to chat.** Open WebUI installs and runs on its own, but you must connect at least one LLM backend before you can hold a conversation.
-2. **Configure Backends is ordered after admin registration.** The action refuses to run until you have opened the Web UI and created the first admin account, which prevents a database-corruption failure mode.
-3. **Maple Proxy's API key cannot be read automatically**, so a non-empty placeholder is seeded. If your Maple Proxy enforces a key, replace the placeholder in Open WebUI's admin settings.
-4. **No GPU acceleration for Open WebUI itself.** Inference runs in the backend services.
-5. **Install requires internet access** to complete the embedding-model download — see [Installation and First-Run Flow](#installation-and-first-run-flow).
-
-## Troubleshooting
-
-The failure modes specific to this package, most of which trace back to `webui.db` being the real configuration store.
-
-| Symptom                                                    | Check                                                            | Resolution                                                                                 |
-| ---------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Configure Backends refuses to run                          | Has an admin account been created in the Web UI?                 | Open the Web UI, register the first admin, then re-run the action                          |
-| Web search returns nothing; Reconnect SearXNG task showing | Was the Searxng Query URL edited in Open WebUI's admin settings? | Run [Reconnect SearXNG](#actions)                                                          |
-| No models available; cannot start a chat                   | Is any backend selected in Configure Backends?                   | Install a backend service, then select it in Configure Backends                            |
-| A setting reverts on every start                           | Is it one of the reconciled keys above?                          | Expected for reconciled keys; the package re-asserts them. Seeded keys are never touched   |
-| Install fails or times out                                 | Does the server have internet access to HuggingFace?             | Restore connectivity and reinstall — install cannot complete offline                       |
-| A backend stops working after the dependency was updated   | Did its assigned bridge port move?                               | `setupMain` repoints it automatically on the next start; if not, re-run Configure Backends |
-| Models re-download from HuggingFace on every start         | Did install complete, or was the volume replaced?                | Reinstall so the bootstrap step reseeds the cache onto the volume                          |
+1. **Environment variables cannot change a setting after the first launch.** Upstream reads PersistentConfig keys from the environment only while no row exists, which is why this package writes to `webui.db`.
+2. **Both backend types start disabled** and the provider list starts empty, unlike upstream.
+3. **A setting you change by hand is never overwritten** — the package raises a task instead.
+4. **Community sharing, the version-update check, and admin analytics are off.**
+5. **The first account created is the administrator**, and no credential is generated for you.
+6. **Web search requires SearXNG installed and enabled** in Open WebUI's own admin panel; installing it is not enough on its own.
+7. **No riscv64 build.** x86_64 and aarch64 only.
 
 ---
 
@@ -247,24 +206,25 @@ architectures:
   - aarch64
 subcontainers:
   - open-webui-sub # the running daemon
-  - open-webui-bootstrap # install only
+  - open-webui-bootstrap # temporary; install-time first boot
+  - webui-model-seed # temporary; seeds the baked model cache onto the volume
 volumes:
   open-webui: /app/backend/data
   startos: host side (store.json)
 file_models:
-  - store.json # FileHelper.json on the startos volume
+  - store.json # Open WebUI's own config lives in webui.db, not a file
 startos_managed_env_vars:
   - WEBUI_SECRET_KEY
   - CORS_ALLOW_ORIGIN
-  - WEBUI_SESSION_COOKIE_SECURE
   - ENABLE_VERSION_UPDATE_CHECK
   - ENABLE_ADMIN_ANALYTICS
-dependencies: # all optional
-  - ollama # port 11434 (native; no key)
-  - vllm # port 8000 /v1 (key auto-read from vllm:public)
-  - llama-cpp # port 8080 /v1 (keyless over the service bridge)
-  - maple-proxy # port 8080 /v1 (placeholder key)
-  - searxng # port 80 (enabled in Open WebUI's admin settings)
+  - WEBUI_SESSION_COOKIE_SECURE
+dependencies: # all optional; declared only while selected in Configure Backends
+  - ollama
+  - vllm
+  - llama-cpp
+  - maple-proxy
+  - searxng
 interfaces:
   ui: { type: ui, port: 8080 }
 actions:
@@ -272,7 +232,7 @@ actions:
   - reconnect-searxng
   - reset-password
 tasks:
-  - { action: reconnect-searxng, severity: important }
+  - { action: reconnect-searxng, severity: important } # conditional, not install-time
 health_checks:
-  - primary # the daemon's ready check, displayed "Web Interface"
+  - primary # displayed "Web Interface"; GET /health
 ```

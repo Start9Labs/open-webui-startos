@@ -273,7 +273,7 @@ const isOurs = (stored: string | undefined, lastWritten: string | undefined) =>
  *
  * Every write path since 0.11.0:1 claims its key, so no record at all means an
  * install predating that — the ones the blank-address bug could strand. The
- * repair claims the key, so it fires at most once. Transitional; see TODO.md.
+ * repair claims the key, so it fires at most once. Transitional; see #38.
  */
 const isStranded = (
   entry: Reconciled,

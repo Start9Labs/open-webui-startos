@@ -1,73 +1,63 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.11.0:3',
+  version: '0.11.1:0',
   releaseNotes: {
-    en_US: `Updated Open WebUI to 0.11.0.
+    en_US: `Updated Open WebUI to 0.11.1.
 
-A large release that rebuilds the interface from the ground up, with a redesigned chat view and admin settings moved in alongside your personal settings. It also adds sub-agents, folder pages, chat forking, chat timers, per-chat and per-user variables, webhook notification targets and a personal usage dashboard. Upstream flags this as a security release with several access-control fixes.
+Upstream flags this as a security release. It fixes knowledge-base searches that could return material you have no access to, documents crafted to exhaust the server's memory, web address checks that a request could skip, and code execution reachable through a tag in a model's reply.
 
-This version changes the database schema, so back up Open WebUI before updating, and expect the first start afterwards to take longer than usual while your chats are migrated.
+It also rebuilds how replies stream: a long reply now arrives as small additions rather than the whole message resent with every update, which makes long chats noticeably lighter on the server and in your browser. Several ways a reply could vanish, arrive empty, or stop partway are fixed too.
 
-Also fixes three things on the StartOS side. Web search with SearXNG now works whichever order you installed the two in — previously, installing SearXNG after Open WebUI had already run left the search address blank, and turning web search on did nothing. And the models Open WebUI uses for audio transcription and document search now come from inside the package, with the remainder downloaded while it installs rather than the first time you use it — so Open WebUI is ready to work as soon as installing finishes. Finally, a connected AI service that moves to a new internal address is reconnected automatically instead of quietly dropping out until you ran Configure Backends again. Anything you have configured yourself is left untouched.
+New in this release: a model can be made to ask before it runs a tool, a model can put a multiple-choice question to you mid-conversation, chat search finds recent messages properly, and you can switch model from the message box.
 
-If web search stopped working because the SearXNG address in Open WebUI's settings was edited by hand, that now repairs itself on the next start in most cases. Where the address is one this server cannot safely replace, StartOS prompts you to run the new **Reconnect SearXNG** action, which restores it and resumes keeping it up to date. Previously that state could only be undone by reinstalling.
+The database is updated on the first start after this upgrade. It is a small change, so the extra wait should be short.
 
-Also removes a stray OpenAI provider. A fresh install listed \`https://api.openai.com/v1\` under Configure Backends even though nobody had added it — it is Open WebUI's own default — and you had to delete it by hand. Left in place, running Configure Backends for any other reason switched the OpenAI connection on against that keyless address, which then failed every time Open WebUI looked for models. New installs now start with no provider listed. Existing installs are unaffected; delete the row once if it is still there.
+Full release notes: https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
+    es_ES: `Se ha actualizado Open WebUI a 0.11.1.
 
-Full release notes: https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
-    es_ES: `Se ha actualizado Open WebUI a 0.11.0.
+El proyecto original la señala como versión de seguridad. Corrige búsquedas en bases de conocimiento que podían devolver material al que usted no tiene acceso, documentos diseñados para agotar la memoria del servidor, comprobaciones de direcciones web que una petición podía saltarse y ejecución de código alcanzable mediante una etiqueta en la respuesta de un modelo.
 
-Una versión importante que rehace la interfaz desde cero, con una vista de chat rediseñada y la configuración de administración integrada junto a la configuración personal. También añade subagentes, páginas de carpetas, bifurcación de chats, temporizadores, variables por chat y por usuario, destinos de notificación por webhook y un panel de uso personal. El proyecto original la señala como versión de seguridad, con varias correcciones de control de acceso.
+También rehace la transmisión de las respuestas: una respuesta larga llega ahora como pequeñas adiciones en lugar de reenviarse entera con cada actualización, lo que aligera notablemente las conversaciones largas tanto en el servidor como en su navegador. Además se corrigen varias formas en que una respuesta podía desaparecer, llegar vacía o detenerse a medias.
 
-Esta versión cambia el esquema de la base de datos: haga una copia de seguridad de Open WebUI antes de actualizar y tenga en cuenta que el primer arranque posterior tardará más de lo habitual mientras se migran sus chats.
+Novedades de esta versión: se puede exigir que un modelo pida permiso antes de usar una herramienta, un modelo puede plantearle una pregunta de opción múltiple en mitad de la conversación, la búsqueda de chats encuentra correctamente los mensajes recientes y puede cambiar de modelo desde el cuadro de mensaje.
 
-También corrige tres cosas del lado de StartOS. La búsqueda web con SearXNG ahora funciona sea cual sea el orden en que instalara ambos: antes, instalar SearXNG después de que Open WebUI ya se hubiera ejecutado dejaba vacía la dirección de búsqueda y activar la búsqueda web no surtía efecto. Además, los modelos que Open WebUI usa para transcribir audio y buscar en documentos ahora vienen dentro del paquete, y el resto se descarga durante la instalación en lugar de la primera vez que los usa, así que Open WebUI está listo para funcionar en cuanto termina de instalarse. Por último, un servicio de IA conectado que cambia de dirección interna se vuelve a conectar automáticamente, en lugar de desaparecer sin aviso hasta que volviera a ejecutar Configurar backends. Todo lo que haya configurado usted se respeta.
+La base de datos se actualiza en el primer arranque tras esta actualización. Es un cambio pequeño, así que la espera adicional será breve.
 
-Si la búsqueda web dejó de funcionar porque la dirección de SearXNG en los ajustes de Open WebUI se editó a mano, en la mayoría de los casos eso se repara solo en el siguiente arranque. Cuando la dirección es una que este servidor no puede reemplazar con seguridad, StartOS le pedirá que ejecute la nueva acción **Reconectar SearXNG**, que la restaura y vuelve a mantenerla al día. Antes, ese estado solo podía deshacerse reinstalando.
+Notas de la versión completas: https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
+    de_DE: `Open WebUI wurde auf 0.11.1 aktualisiert.
 
-También elimina un proveedor de OpenAI que sobraba. Una instalación nueva mostraba \`https://api.openai.com/v1\` en Configurar backends aunque nadie lo hubiera añadido —es el valor por omisión del propio Open WebUI— y había que borrarlo a mano. Si se dejaba ahí, ejecutar Configurar backends por cualquier otro motivo activaba la conexión con OpenAI contra esa dirección sin clave, que luego fallaba cada vez que Open WebUI buscaba modelos. Las instalaciones nuevas ya no muestran ningún proveedor. Las existentes no se ven afectadas: borre la fila una vez si sigue ahí.
+Das Ursprungsprojekt kennzeichnet diese Version als Sicherheitsrelease. Sie behebt Suchen in Wissensdatenbanken, die Material zurückgeben konnten, auf das Sie keinen Zugriff haben, Dokumente, die gezielt den Arbeitsspeicher des Servers erschöpfen, Prüfungen von Web-Adressen, die eine Anfrage umgehen konnte, und Codeausführung, die über ein Tag in der Antwort eines Modells erreichbar war.
 
-Notas de la versión completas: https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
-    de_DE: `Open WebUI wurde auf 0.11.0 aktualisiert.
+Außerdem wird das Streaming der Antworten neu aufgebaut: Eine lange Antwort kommt jetzt als kleine Ergänzungen an, statt bei jeder Aktualisierung vollständig neu gesendet zu werden, was lange Unterhaltungen auf dem Server und im Browser deutlich leichter macht. Mehrere Fälle, in denen eine Antwort verschwand, leer ankam oder auf halbem Weg abbrach, sind ebenfalls behoben.
 
-Eine große Version, die die Oberfläche von Grund auf neu aufbaut, mit überarbeiteter Chat-Ansicht und Administrationseinstellungen, die nun neben den persönlichen Einstellungen liegen. Hinzu kommen Unteragenten, Ordnerseiten, das Abzweigen von Chats, Chat-Timer, Variablen pro Chat und pro Benutzer, Webhook-Benachrichtigungsziele und eine persönliche Nutzungsübersicht. Das Ursprungsprojekt kennzeichnet diese Version als Sicherheitsrelease mit mehreren Korrekturen an der Zugriffskontrolle.
+Neu in dieser Version: Ein Modell kann verpflichtet werden, vor dem Einsatz eines Werkzeugs nachzufragen, ein Modell kann Ihnen mitten im Gespräch eine Auswahlfrage stellen, die Chat-Suche findet neue Nachrichten zuverlässig, und Sie können das Modell direkt im Nachrichtenfeld wechseln.
 
-Diese Version ändert das Datenbankschema: Sichern Sie Open WebUI vor dem Update, und rechnen Sie damit, dass der erste Start danach länger dauert, während Ihre Chats migriert werden.
+Die Datenbank wird beim ersten Start nach diesem Update angepasst. Es ist eine kleine Änderung, die zusätzliche Wartezeit bleibt also kurz.
 
-Außerdem werden drei Dinge auf StartOS-Seite behoben. Die Websuche mit SearXNG funktioniert jetzt unabhängig davon, in welcher Reihenfolge Sie beide installiert haben — zuvor blieb die Suchadresse leer, wenn SearXNG installiert wurde, nachdem Open WebUI bereits gelaufen war, und das Einschalten der Websuche bewirkte nichts. Und die Modelle, die Open WebUI für Audio-Transkription und Dokumentsuche verwendet, liegen nun im Paket; der Rest wird während der Installation heruntergeladen statt beim ersten Gebrauch — Open WebUI ist damit einsatzbereit, sobald die Installation fertig ist. Und ein verbundener KI-Dienst, der eine neue interne Adresse bekommt, wird automatisch wieder verbunden, statt stillschweigend auszufallen, bis Sie „Backends konfigurieren“ erneut ausgeführt hatten. Was Sie selbst konfiguriert haben, bleibt unangetastet.
+Vollständige Versionshinweise: https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
+    pl_PL: `Zaktualizowano Open WebUI do wersji 0.11.1.
 
-Wenn die Websuche nicht mehr funktionierte, weil die SearXNG-Adresse in den Einstellungen von Open WebUI von Hand geändert wurde, behebt sich das in den meisten Fällen beim nächsten Start von selbst. Ist die Adresse eine, die dieser Server nicht gefahrlos ersetzen kann, fordert StartOS Sie auf, die neue Aktion **SearXNG neu verbinden** auszuführen, die sie wiederherstellt und künftig wieder pflegt. Bisher ließ sich dieser Zustand nur durch eine Neuinstallation beheben.
+Autorzy oznaczają je jako wydanie bezpieczeństwa. Naprawia wyszukiwanie w bazach wiedzy, które mogło zwracać materiały bez dostępu do nich, dokumenty spreparowane tak, by wyczerpać pamięć serwera, kontrole adresów internetowych, które żądanie mogło pominąć, oraz wykonanie kodu osiągalne przez znacznik w odpowiedzi modelu.
 
-Außerdem wird ein überflüssiger OpenAI-Anbieter entfernt. Eine Neuinstallation führte unter „Backends konfigurieren“ \`https://api.openai.com/v1\` auf, obwohl ihn niemand hinzugefügt hatte — es ist Open WebUIs eigener Standardwert — und man musste ihn von Hand löschen. Blieb er stehen, schaltete jedes Ausführen von „Backends konfigurieren“ die OpenAI-Verbindung auf diese Adresse ohne Schlüssel ein, was dann bei jeder Modellabfrage fehlschlug. Neuinstallationen starten jetzt ohne aufgeführten Anbieter. Bestehende Installationen sind nicht betroffen; löschen Sie die Zeile einmalig, falls sie noch da ist.
+Przebudowuje też przesyłanie odpowiedzi: długa odpowiedź przychodzi teraz jako niewielkie uzupełnienia, zamiast być przesyłana w całości przy każdej aktualizacji, dzięki czemu długie rozmowy znacznie mniej obciążają serwer i przeglądarkę. Poprawiono również kilka sytuacji, w których odpowiedź znikała, przychodziła pusta lub urywała się w połowie.
 
-Vollständige Versionshinweise: https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
-    pl_PL: `Zaktualizowano Open WebUI do wersji 0.11.0.
+Nowości w tym wydaniu: można wymagać, aby model pytał o zgodę przed użyciem narzędzia, model może zadać Ci pytanie wielokrotnego wyboru w trakcie rozmowy, wyszukiwanie czatów poprawnie znajduje najnowsze wiadomości, a model można zmienić z poziomu pola wiadomości.
 
-Duże wydanie, które przebudowuje interfejs od podstaw — z przeprojektowanym widokiem czatu i ustawieniami administratora przeniesionymi obok ustawień osobistych. Dodaje też podagentów, strony folderów, rozgałęzianie czatów, minutniki czatu, zmienne dla czatu i użytkownika, cele powiadomień webhook oraz osobisty panel użycia. Autorzy oznaczają je jako wydanie bezpieczeństwa z kilkoma poprawkami kontroli dostępu.
+Baza danych zostanie zaktualizowana przy pierwszym uruchomieniu po tej aktualizacji. To niewielka zmiana, więc dodatkowe oczekiwanie będzie krótkie.
 
-Ta wersja zmienia schemat bazy danych: przed aktualizacją wykonaj kopię zapasową Open WebUI, a pierwsze uruchomienie po niej potrwa dłużej niż zwykle, gdy migrowane będą Twoje czaty.
+Pełne informacje o wydaniu: https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
+    fr_FR: `Open WebUI a été mis à jour vers la version 0.11.1.
 
-Naprawia też trzy rzeczy po stronie StartOS. Wyszukiwanie w sieci z użyciem SearXNG działa teraz niezależnie od kolejności instalacji — wcześniej zainstalowanie SearXNG po tym, jak Open WebUI już się uruchomiło, zostawiało pusty adres wyszukiwania, a włączenie wyszukiwania nic nie dawało. Modele, których Open WebUI używa do transkrypcji dźwięku i przeszukiwania dokumentów, są teraz dołączone do pakietu, a reszta pobiera się podczas instalacji zamiast przy pierwszym użyciu — Open WebUI jest więc gotowe do pracy, gdy tylko instalacja się zakończy. Na koniec: podłączona usługa AI, która zmieni adres wewnętrzny, zostanie połączona ponownie automatycznie, zamiast po cichu przestać działać do czasu ponownego uruchomienia akcji Konfiguruj backendy. Wszystko, co skonfigurowałeś samodzielnie, pozostaje nienaruszone.
+Le projet en amont la signale comme une version de sécurité. Elle corrige des recherches dans les bases de connaissances qui pouvaient renvoyer des éléments auxquels vous n'avez pas accès, des documents conçus pour épuiser la mémoire du serveur, des vérifications d'adresses web qu'une requête pouvait contourner, et une exécution de code accessible via une balise dans la réponse d'un modèle.
 
-Jeśli wyszukiwanie w sieci przestało działać, ponieważ adres SearXNG w ustawieniach Open WebUI został zmieniony ręcznie, w większości przypadków naprawi się to samo przy następnym uruchomieniu. Gdy adresu nie da się bezpiecznie zastąpić, StartOS poprosi o uruchomienie nowej akcji **Połącz ponownie z SearXNG**, która go przywraca i znów utrzymuje aktualnym. Wcześniej ten stan można było naprawić tylko przez ponowną instalację.
+Elle reconstruit également la diffusion des réponses : une réponse longue arrive désormais par petits ajouts au lieu d'être renvoyée en entier à chaque mise à jour, ce qui allège nettement les longues conversations, sur le serveur comme dans votre navigateur. Plusieurs cas où une réponse disparaissait, arrivait vide ou s'arrêtait en cours de route sont aussi corrigés.
 
-Usuwa też zbędnego dostawcę OpenAI. Nowa instalacja pokazywała w akcji Konfiguruj backendy adres \`https://api.openai.com/v1\`, choć nikt go nie dodawał — to domyślna wartość samego Open WebUI — i trzeba go było skasować ręcznie. Pozostawiony, powodował, że uruchomienie Konfiguruj backendy z dowolnego innego powodu włączało połączenie z OpenAI pod tym adresem bez klucza, które następnie zawodziło przy każdym pobieraniu listy modeli. Nowe instalacje startują bez żadnego dostawcy. Istniejące pozostają bez zmian — usuń ten wiersz raz, jeśli nadal tam jest.
+Nouveautés de cette version : un modèle peut être tenu de demander votre accord avant d'utiliser un outil, un modèle peut vous poser une question à choix multiples en pleine conversation, la recherche dans les conversations retrouve correctement les messages récents, et vous pouvez changer de modèle depuis la zone de saisie.
 
-Pełne informacje o wydaniu: https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
-    fr_FR: `Open WebUI a été mis à jour vers la version 0.11.0.
+La base de données est mise à jour au premier démarrage après cette mise à niveau. Le changement est petit, l'attente supplémentaire sera donc brève.
 
-Une version majeure qui reconstruit l'interface de fond en comble, avec une vue de conversation redessinée et les réglages d'administration désormais regroupés avec vos réglages personnels. Elle ajoute aussi des sous-agents, des pages de dossiers, la bifurcation des conversations, des minuteurs, des variables par conversation et par utilisateur, des destinations de notification par webhook et un tableau de bord d'utilisation personnel. Le projet en amont la signale comme une version de sécurité, avec plusieurs corrections de contrôle d'accès.
-
-Cette version modifie le schéma de la base de données : sauvegardez Open WebUI avant la mise à jour, et attendez-vous à ce que le premier démarrage ensuite soit plus long que d'habitude, le temps que vos conversations soient migrées.
-
-Elle corrige aussi trois points côté StartOS. La recherche web avec SearXNG fonctionne désormais quel que soit l'ordre dans lequel vous avez installé les deux : auparavant, installer SearXNG après qu'Open WebUI eut déjà démarré laissait l'adresse de recherche vide et activer la recherche web ne changeait rien. Et les modèles qu'Open WebUI utilise pour la transcription audio et la recherche dans les documents sont désormais fournis dans le paquet, le reste étant téléchargé pendant l'installation plutôt qu'à la première utilisation : Open WebUI est donc opérationnel dès que l'installation se termine. Enfin, un service d'IA connecté qui change d'adresse interne est reconnecté automatiquement, au lieu de disparaître silencieusement jusqu'à ce que vous relanciez Configurer les backends. Ce que vous avez configuré vous-même reste intact.
-
-Si la recherche web ne fonctionnait plus parce que l'adresse de SearXNG avait été modifiée à la main dans les réglages d'Open WebUI, cela se répare désormais tout seul au démarrage suivant dans la plupart des cas. Lorsque l'adresse ne peut pas être remplacée sans risque, StartOS vous invite à lancer la nouvelle action **Reconnecter SearXNG**, qui la rétablit et la tient de nouveau à jour. Auparavant, seule une réinstallation permettait de sortir de cet état.
-
-Supprime également un fournisseur OpenAI superflu. Une nouvelle installation affichait \`https://api.openai.com/v1\` dans Configurer les backends alors que personne ne l'avait ajouté — c'est la valeur par défaut d'Open WebUI lui-même — et il fallait le supprimer à la main. Laissé en place, il faisait qu'exécuter Configurer les backends pour toute autre raison activait la connexion OpenAI vers cette adresse sans clé, laquelle échouait ensuite à chaque recherche de modèles. Les nouvelles installations démarrent désormais sans aucun fournisseur. Les installations existantes ne changent pas : supprimez la ligne une fois si elle est encore là.
-
-Notes de version complètes : https://github.com/open-webui/open-webui/releases/tag/v0.11.0`,
+Notes de version complètes : https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
   },
   migrations: {
     up: async ({ effects }) => {},

@@ -1,63 +1,63 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.11.1:0',
+  version: '0.11.3:0',
   releaseNotes: {
-    en_US: `Updated Open WebUI to 0.11.1.
+    en_US: `Updated Open WebUI to 0.11.3, taking in 0.11.2 along the way.
 
-Upstream flags this as a security release. It fixes knowledge-base searches that could return material you have no access to, documents crafted to exhaust the server's memory, web address checks that a request could skip, and code execution reachable through a tag in a model's reply.
+Upstream flags 0.11.2 as a security release and recommends updating.
 
-It also rebuilds how replies stream: a long reply now arrives as small additions rather than the whole message resent with every update, which makes long chats noticeably lighter on the server and in your browser. Several ways a reply could vanish, arrive empty, or stop partway are fixed too.
+The fixes you are most likely to notice: a conversation no longer breaks part way through and stops showing the reply until you reload, and chats already saved in that state work again; a reply written under an earlier message stays attached to it, so branch arrows, exports and later edits keep the whole conversation in view, and chats already missing that link are repaired when opened; a reply from a reasoning model streams to the end instead of freezing after its first few words; a model's reasoning after it uses a tool stays in Thoughts instead of being written into the reply as ordinary text; text containing angle brackets and a dollar sign is no longer stripped from your message; and a model switched off in the admin list stays in view so you can switch it back on. Searching and filtering by tag now ignore letter case for accented and non-Latin text.
 
-New in this release: a model can be made to ask before it runs a tool, a model can put a multiple-choice question to you mid-conversation, chat search finds recent messages properly, and you can switch model from the message box.
+Also new: document and slide previews gain numbered page thumbnails you can click, you can name a font for the interface to use, and accessibility mode lifts the contrast of more of the interface, menus and the model picker included.
 
-The database is updated on the first start after this upgrade. It is a small change, so the extra wait should be short.
+If a database upgrade fails, Open WebUI now stops at the error that caused it rather than starting half updated — the cause of the missing 'chat.timer_at' column reported after upgrading from 0.11.0, 0.11.1 or 0.11.2.
 
-Full release notes: https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
-    es_ES: `Se ha actualizado Open WebUI a 0.11.1.
+Full release notes: https://github.com/open-webui/open-webui/releases/tag/v0.11.3`,
+    es_ES: `Se ha actualizado Open WebUI a 0.11.3, incorporando también la versión 0.11.2.
 
-El proyecto original la señala como versión de seguridad. Corrige búsquedas en bases de conocimiento que podían devolver material al que usted no tiene acceso, documentos diseñados para agotar la memoria del servidor, comprobaciones de direcciones web que una petición podía saltarse y ejecución de código alcanzable mediante una etiqueta en la respuesta de un modelo.
+El proyecto original señala la 0.11.2 como versión de seguridad y recomienda actualizar.
 
-También rehace la transmisión de las respuestas: una respuesta larga llega ahora como pequeñas adiciones en lugar de reenviarse entera con cada actualización, lo que aligera notablemente las conversaciones largas tanto en el servidor como en su navegador. Además se corrigen varias formas en que una respuesta podía desaparecer, llegar vacía o detenerse a medias.
+Las correcciones que más se notan: una conversación ya no se rompe a mitad y deja de mostrar la respuesta hasta recargar, y los chats guardados en ese estado vuelven a funcionar; una respuesta escrita bajo un mensaje anterior permanece unida a él, de modo que las flechas de ramificación, las exportaciones y las ediciones posteriores mantienen toda la conversación a la vista, y los chats a los que ya les faltaba ese vínculo se reparan al abrirlos; la respuesta de un modelo de razonamiento se transmite hasta el final en lugar de congelarse tras las primeras palabras; el razonamiento de un modelo tras usar una herramienta permanece en Pensamientos en lugar de escribirse en la respuesta como texto normal; el texto con corchetes angulares y un signo de dólar ya no se elimina de su mensaje; y un modelo desactivado en el panel de administración sigue visible para poder reactivarlo. La búsqueda y el filtrado por etiqueta ya ignoran mayúsculas y minúsculas en textos acentuados y no latinos.
 
-Novedades de esta versión: se puede exigir que un modelo pida permiso antes de usar una herramienta, un modelo puede plantearle una pregunta de opción múltiple en mitad de la conversación, la búsqueda de chats encuentra correctamente los mensajes recientes y puede cambiar de modelo desde el cuadro de mensaje.
+Novedades: las vistas previas de documentos y presentaciones incluyen miniaturas de página numeradas en las que puede hacer clic, puede indicar la fuente tipográfica que usará la interfaz, y el modo de accesibilidad aumenta el contraste de más partes de la interfaz, incluidos los menús y el selector de modelos.
 
-La base de datos se actualiza en el primer arranque tras esta actualización. Es un cambio pequeño, así que la espera adicional será breve.
+Si una actualización de la base de datos falla, Open WebUI ahora se detiene en el error que la causó en lugar de arrancar a medio actualizar: es el origen de la columna 'chat.timer_at' ausente que se comunicó al actualizar desde 0.11.0, 0.11.1 o 0.11.2.
 
-Notas de la versión completas: https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
-    de_DE: `Open WebUI wurde auf 0.11.1 aktualisiert.
+Notas de la versión completas: https://github.com/open-webui/open-webui/releases/tag/v0.11.3`,
+    de_DE: `Open WebUI wurde auf 0.11.3 aktualisiert und nimmt dabei auch 0.11.2 mit.
 
-Das Ursprungsprojekt kennzeichnet diese Version als Sicherheitsrelease. Sie behebt Suchen in Wissensdatenbanken, die Material zurückgeben konnten, auf das Sie keinen Zugriff haben, Dokumente, die gezielt den Arbeitsspeicher des Servers erschöpfen, Prüfungen von Web-Adressen, die eine Anfrage umgehen konnte, und Codeausführung, die über ein Tag in der Antwort eines Modells erreichbar war.
+Das Ursprungsprojekt kennzeichnet 0.11.2 als Sicherheitsrelease und empfiehlt die Aktualisierung.
 
-Außerdem wird das Streaming der Antworten neu aufgebaut: Eine lange Antwort kommt jetzt als kleine Ergänzungen an, statt bei jeder Aktualisierung vollständig neu gesendet zu werden, was lange Unterhaltungen auf dem Server und im Browser deutlich leichter macht. Mehrere Fälle, in denen eine Antwort verschwand, leer ankam oder auf halbem Weg abbrach, sind ebenfalls behoben.
+Die auffälligsten Korrekturen: Eine Unterhaltung bricht nicht mehr mittendrin ab und zeigt die Antwort erst nach einem Neuladen wieder an, und bereits in diesem Zustand gespeicherte Chats funktionieren wieder; eine Antwort unter einer früheren Nachricht bleibt mit dieser verknüpft, sodass Verzweigungspfeile, Exporte und spätere Bearbeitungen die gesamte Unterhaltung im Blick behalten, und Chats, denen diese Verknüpfung bereits fehlt, werden beim Öffnen repariert; die Antwort eines Reasoning-Modells wird bis zum Ende gestreamt, statt nach den ersten Worten einzufrieren; die Überlegungen eines Modells nach dem Einsatz eines Werkzeugs bleiben in den Gedanken, statt als gewöhnlicher Text in die Antwort geschrieben zu werden; Text mit spitzen Klammern und einem Dollarzeichen wird nicht mehr aus Ihrer Nachricht entfernt; und ein in der Administrationsliste abgeschaltetes Modell bleibt sichtbar, sodass Sie es wieder einschalten können. Suche und Filterung nach Tags ignorieren nun Groß- und Kleinschreibung bei akzentuierten und nicht lateinischen Texten.
 
-Neu in dieser Version: Ein Modell kann verpflichtet werden, vor dem Einsatz eines Werkzeugs nachzufragen, ein Modell kann Ihnen mitten im Gespräch eine Auswahlfrage stellen, die Chat-Suche findet neue Nachrichten zuverlässig, und Sie können das Modell direkt im Nachrichtenfeld wechseln.
+Ebenfalls neu: Dokument- und Folienvorschauen erhalten nummerierte Seitenminiaturen zum Anklicken, Sie können eine Schriftart für die Oberfläche angeben, und der Barrierefreiheitsmodus hebt den Kontrast in weiteren Bereichen an, einschließlich der Menüs und der Modellauswahl.
 
-Die Datenbank wird beim ersten Start nach diesem Update angepasst. Es ist eine kleine Änderung, die zusätzliche Wartezeit bleibt also kurz.
+Schlägt eine Aktualisierung der Datenbank fehl, hält Open WebUI nun bei dem verursachenden Fehler an, statt halb aktualisiert zu starten — die Ursache der fehlenden Spalte 'chat.timer_at', die nach einem Update von 0.11.0, 0.11.1 oder 0.11.2 gemeldet wurde.
 
-Vollständige Versionshinweise: https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
-    pl_PL: `Zaktualizowano Open WebUI do wersji 0.11.1.
+Vollständige Versionshinweise: https://github.com/open-webui/open-webui/releases/tag/v0.11.3`,
+    pl_PL: `Zaktualizowano Open WebUI do wersji 0.11.3, obejmując po drodze także 0.11.2.
 
-Autorzy oznaczają je jako wydanie bezpieczeństwa. Naprawia wyszukiwanie w bazach wiedzy, które mogło zwracać materiały bez dostępu do nich, dokumenty spreparowane tak, by wyczerpać pamięć serwera, kontrole adresów internetowych, które żądanie mogło pominąć, oraz wykonanie kodu osiągalne przez znacznik w odpowiedzi modelu.
+Autorzy oznaczają wersję 0.11.2 jako wydanie bezpieczeństwa i zalecają aktualizację.
 
-Przebudowuje też przesyłanie odpowiedzi: długa odpowiedź przychodzi teraz jako niewielkie uzupełnienia, zamiast być przesyłana w całości przy każdej aktualizacji, dzięki czemu długie rozmowy znacznie mniej obciążają serwer i przeglądarkę. Poprawiono również kilka sytuacji, w których odpowiedź znikała, przychodziła pusta lub urywała się w połowie.
+Najbardziej widoczne poprawki: rozmowa nie urywa się już w połowie i nie przestaje pokazywać odpowiedzi do czasu przeładowania, a czaty zapisane w takim stanie znów działają; odpowiedź zapisana pod wcześniejszą wiadomością pozostaje z nią powiązana, dzięki czemu strzałki gałęzi, eksporty i późniejsze edycje zachowują całą rozmowę, a czaty, w których tego powiązania już brakowało, są naprawiane przy otwarciu; odpowiedź modelu rozumującego przesyła się do końca zamiast zatrzymywać się po pierwszych słowach; rozumowanie modelu po użyciu narzędzia zostaje w sekcji Przemyślenia, zamiast trafiać do odpowiedzi jako zwykły tekst; tekst zawierający nawiasy ostre i znak dolara nie jest już usuwany z Twojej wiadomości; a model wyłączony na liście administratora pozostaje widoczny, więc można go włączyć ponownie. Wyszukiwanie i filtrowanie po etykietach nie rozróżnia już wielkości liter w tekstach z akcentami i niełacińskich.
 
-Nowości w tym wydaniu: można wymagać, aby model pytał o zgodę przed użyciem narzędzia, model może zadać Ci pytanie wielokrotnego wyboru w trakcie rozmowy, wyszukiwanie czatów poprawnie znajduje najnowsze wiadomości, a model można zmienić z poziomu pola wiadomości.
+Nowości: podglądy dokumentów i prezentacji zyskują numerowane miniatury stron, które można kliknąć, można wskazać krój pisma dla interfejsu, a tryb dostępności podnosi kontrast w kolejnych częściach interfejsu, w tym w menu i w wyborze modelu.
 
-Baza danych zostanie zaktualizowana przy pierwszym uruchomieniu po tej aktualizacji. To niewielka zmiana, więc dodatkowe oczekiwanie będzie krótkie.
+Jeśli aktualizacja bazy danych się nie powiedzie, Open WebUI zatrzymuje się teraz na błędzie, który ją spowodował, zamiast uruchamiać się w połowie zaktualizowany — to przyczyna brakującej kolumny 'chat.timer_at' zgłaszanej po aktualizacji z wersji 0.11.0, 0.11.1 lub 0.11.2.
 
-Pełne informacje o wydaniu: https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
-    fr_FR: `Open WebUI a été mis à jour vers la version 0.11.1.
+Pełne informacje o wydaniu: https://github.com/open-webui/open-webui/releases/tag/v0.11.3`,
+    fr_FR: `Open WebUI a été mis à jour vers la version 0.11.3, en intégrant au passage la 0.11.2.
 
-Le projet en amont la signale comme une version de sécurité. Elle corrige des recherches dans les bases de connaissances qui pouvaient renvoyer des éléments auxquels vous n'avez pas accès, des documents conçus pour épuiser la mémoire du serveur, des vérifications d'adresses web qu'une requête pouvait contourner, et une exécution de code accessible via une balise dans la réponse d'un modèle.
+Le projet en amont signale la 0.11.2 comme une version de sécurité et recommande la mise à jour.
 
-Elle reconstruit également la diffusion des réponses : une réponse longue arrive désormais par petits ajouts au lieu d'être renvoyée en entier à chaque mise à jour, ce qui allège nettement les longues conversations, sur le serveur comme dans votre navigateur. Plusieurs cas où une réponse disparaissait, arrivait vide ou s'arrêtait en cours de route sont aussi corrigés.
+Les correctifs les plus visibles : une conversation ne se rompt plus en cours de route en cessant d'afficher la réponse jusqu'au rechargement, et les conversations déjà enregistrées dans cet état fonctionnent de nouveau ; une réponse écrite sous un message antérieur y reste rattachée, de sorte que les flèches de branche, les exports et les modifications ultérieures conservent toute la conversation, et les conversations auxquelles ce lien manquait déjà sont réparées à l'ouverture ; la réponse d'un modèle de raisonnement se diffuse jusqu'au bout au lieu de se figer après les premiers mots ; le raisonnement d'un modèle après l'usage d'un outil reste dans Réflexions au lieu d'être écrit dans la réponse comme du texte ordinaire ; un texte contenant des chevrons et un signe dollar n'est plus retiré de votre message ; et un modèle désactivé dans la liste d'administration reste visible pour pouvoir être réactivé. La recherche et le filtrage par étiquette ignorent désormais la casse pour les textes accentués et non latins.
 
-Nouveautés de cette version : un modèle peut être tenu de demander votre accord avant d'utiliser un outil, un modèle peut vous poser une question à choix multiples en pleine conversation, la recherche dans les conversations retrouve correctement les messages récents, et vous pouvez changer de modèle depuis la zone de saisie.
+Également nouveau : les aperçus de documents et de diapositives offrent des miniatures de pages numérotées sur lesquelles cliquer, vous pouvez indiquer une police pour l'interface, et le mode d'accessibilité renforce le contraste sur davantage d'éléments, menus et sélecteur de modèles compris.
 
-La base de données est mise à jour au premier démarrage après cette mise à niveau. Le changement est petit, l'attente supplémentaire sera donc brève.
+Si une mise à niveau de la base de données échoue, Open WebUI s'arrête maintenant sur l'erreur qui l'a causée au lieu de démarrer à moitié mis à jour — à l'origine de la colonne 'chat.timer_at' manquante signalée après une mise à jour depuis 0.11.0, 0.11.1 ou 0.11.2.
 
-Notes de version complètes : https://github.com/open-webui/open-webui/releases/tag/v0.11.1`,
+Notes de version complètes : https://github.com/open-webui/open-webui/releases/tag/v0.11.3`,
   },
   migrations: {
     up: async ({ effects }) => {},

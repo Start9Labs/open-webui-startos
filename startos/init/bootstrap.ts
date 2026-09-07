@@ -16,7 +16,10 @@ const BOOTSTRAP_TIMEOUT = 600_000
 export const bootstrap = sdk.setupOnInit(async (effects, kind, progress) => {
   if (kind === null) return
 
+  const copying = progress.addPhase(i18n('Copying bundled models'), 1)
+  copying.start()
   await seedModelCache(effects)
+  copying.complete()
 
   if (kind !== 'install') return
 
@@ -25,8 +28,11 @@ export const bootstrap = sdk.setupOnInit(async (effects, kind, progress) => {
   // environment right after. Doing that here, once, is what lets every later
   // config write assume the table exists, so neither setupMain nor the
   // Configure Backends action carries any first-run branching.
-  const phase = progress.addPhase(i18n('Preparing Open WebUI'))
-  phase.start()
+  const preparing = progress.addPhase(
+    i18n('Preparing the database and models'),
+    4,
+  )
+  preparing.start()
 
   const WEBUI_SECRET_KEY = await storeJson
     .read((s) => s.WEBUI_SECRET_KEY)
@@ -66,7 +72,7 @@ export const bootstrap = sdk.setupOnInit(async (effects, kind, progress) => {
     })
     .runUntilSuccess(BOOTSTRAP_TIMEOUT)
 
-  phase.complete()
+  preparing.complete()
 
   await seedManagedConfig(effects, await resolveManagedContext(effects, 'once'))
 })

@@ -1,18 +1,18 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.11.3:1',
+  version: '0.11.4:0',
   releaseNotes: {
     en_US:
-      'Installation progress shows each step as it runs — copying the bundled models, then preparing the database and models.',
+      'Updated Open WebUI to 0.11.4, a patch release with reliability and security fixes. Full notes: https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
     es_ES:
-      'El progreso de la instalación muestra cada paso a medida que se ejecuta: copiar los modelos incluidos y, después, preparar la base de datos y los modelos.',
+      'Open WebUI se actualizó a 0.11.4, una versión de parche con correcciones de fiabilidad y seguridad. Notas completas: https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
     de_DE:
-      'Der Installationsfortschritt zeigt jeden Schritt, während er läuft: die mitgelieferten Modelle kopieren und anschließend Datenbank und Modelle vorbereiten.',
+      'Open WebUI wurde auf 0.11.4 aktualisiert, eine Patch-Version mit Zuverlässigkeits- und Sicherheitskorrekturen. Vollständige Hinweise: https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
     pl_PL:
-      'Postęp instalacji pokazuje każdy krok w trakcie jego wykonywania: kopiowanie dołączonych modeli, a następnie przygotowanie bazy danych i modeli.',
+      'Zaktualizowano Open WebUI do wersji 0.11.4, wydania poprawkowego z poprawkami niezawodności i bezpieczeństwa. Pełne informacje: https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
     fr_FR:
-      "La progression de l'installation affiche chaque étape au fur et à mesure : copie des modèles fournis, puis préparation de la base de données et des modèles.",
+      'Open WebUI a été mis à jour vers la version 0.11.4, une version corrective comprenant des correctifs de fiabilité et de sécurité. Notes complètes : https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
   },
   migrations: {
     up: async ({ effects }) => {},

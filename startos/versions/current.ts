@@ -1,18 +1,18 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.11.4:0',
+  version: '0.11.4:1',
   releaseNotes: {
     en_US:
-      'Updated Open WebUI to 0.11.4, a patch release with reliability and security fixes. Full notes: https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
+      'Fixed installs failing with "sh terminated with signal SIGKILL" on servers with slower disks.',
     es_ES:
-      'Open WebUI se actualizó a 0.11.4, una versión de parche con correcciones de fiabilidad y seguridad. Notas completas: https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
+      'Se corrigió un fallo de instalación con "sh terminated with signal SIGKILL" en servidores con discos más lentos.',
     de_DE:
-      'Open WebUI wurde auf 0.11.4 aktualisiert, eine Patch-Version mit Zuverlässigkeits- und Sicherheitskorrekturen. Vollständige Hinweise: https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
+      'Behoben: Installationen schlugen auf Servern mit langsameren Datenträgern mit „sh terminated with signal SIGKILL“ fehl.',
     pl_PL:
-      'Zaktualizowano Open WebUI do wersji 0.11.4, wydania poprawkowego z poprawkami niezawodności i bezpieczeństwa. Pełne informacje: https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
+      'Naprawiono niepowodzenie instalacji z błędem „sh terminated with signal SIGKILL” na serwerach z wolniejszymi dyskami.',
     fr_FR:
-      'Open WebUI a été mis à jour vers la version 0.11.4, une version corrective comprenant des correctifs de fiabilité et de sécurité. Notes complètes : https://github.com/open-webui/open-webui/releases/tag/v0.11.4',
+      'Correction des installations qui échouaient avec « sh terminated with signal SIGKILL » sur les serveurs dotés de disques plus lents.',
   },
   migrations: {
     up: async ({ effects }) => {},

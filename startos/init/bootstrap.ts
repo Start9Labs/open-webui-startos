@@ -101,11 +101,15 @@ async function seedModelCache(effects: T.Effects): Promise<void> {
     seedMounts,
     'webui-model-seed',
     (subc) =>
-      subc.execFail([
-        'sh',
-        '-c',
-        'set -e; [ -d /app/backend/data/cache ] || exit 0; ' +
-          'mkdir -p /mnt/data/cache; cp -an /app/backend/data/cache/. /mnt/data/cache/',
-      ]),
+      subc.execFail(
+        [
+          'sh',
+          '-c',
+          'set -e; [ -d /app/backend/data/cache ] || exit 0; ' +
+            'mkdir -p /mnt/data/cache; cp -an /app/backend/data/cache/. /mnt/data/cache/',
+        ],
+        undefined,
+        null,
+      ),
   )
 }

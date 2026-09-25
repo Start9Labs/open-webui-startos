@@ -13,7 +13,7 @@
 
 ## Getting set up
 
-Installing takes a few minutes: StartOS starts Open WebUI once during install so it can create its database and be configured before you ever open it. The progress bar shows this as **Preparing Open WebUI**.
+Installing takes a few minutes: StartOS starts Open WebUI once during install so it can create its database and be configured before you ever open it. The progress bar shows this as **Copying bundled models**, then **Preparing the database and models**.
 
 1. Decide which LLM backends you want, and install the local ones first. Open WebUI auto-detects these StartOS AI services and connects to them for you — **Ollama** (local models), **vLLM**, **llama.cpp**, and **Maple Proxy** (all OpenAI-compatible). For external providers (OpenAI, OpenRouter, etc.) nothing extra is needed.
 2. **Start Open WebUI, open the Web UI interface, and register the first account — whoever registers first becomes the admin. Do this _before_ running Configure Backends: the action refuses to run until an admin exists, because writing backend config before then corrupts the database.**

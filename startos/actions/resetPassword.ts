@@ -10,7 +10,9 @@ export const resetPassword = sdk.Action.withoutInput(
   {
     name: i18n('Reset Admin Password'),
     description: i18n('Reset the admin user password in case you forget it'),
-    warning: null,
+    warning: i18n(
+      'Replaces the password of the first admin account. Its current password stops working.',
+    ),
     allowedStatuses: 'any',
     group: null,
     visibility: 'enabled',

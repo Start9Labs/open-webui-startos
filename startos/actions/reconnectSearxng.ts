@@ -29,7 +29,9 @@ export const reconnectSearxng = sdk.Action.withoutInput(
     description: i18n(
       "Point web search back at SearXNG. Use this if the search address was changed by hand and Open WebUI stopped keeping it up to date — it restores the correct address and resumes maintaining it. Doesn't affect your other settings.",
     ),
-    warning: null,
+    warning: i18n(
+      "Replaces the web search address in Open WebUI with SearXNG's and restarts Open WebUI.",
+    ),
     allowedStatuses: 'any',
     group: null,
     visibility: 'enabled',

@@ -108,8 +108,7 @@ async function seedModelCache(effects: T.Effects): Promise<void> {
           'set -e; [ -d /app/backend/data/cache ] || exit 0; ' +
             'mkdir -p /mnt/data/cache; cp -an /app/backend/data/cache/. /mnt/data/cache/',
         ],
-        undefined,
-        null,
+        { timeout: null },
       ),
   )
 }

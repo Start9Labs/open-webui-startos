@@ -18,17 +18,23 @@ Freshly scaffolded? Work the
 guide page, not a file in this repo — read it, don't copy it in.
 
 Keep `README.md` (technical reference for an AI support or administering agent) and
-`instructions.md` (end-user docs) in sync with your changes.
+`instructions.md` (end-user docs) in sync with your changes. This file restates neither:
+whoever changes the package has both, so it carries only what they don't — repo mechanics,
+a change that looks right and is not, where the next thing gets added, a naming trap, a
+build or test invocation particular to this repo.
 
-**Bugs and feature requests are GitHub issues on this repo** — file them as you find them.
+**Fix a defect you spot rather than reporting it** — you have the package open and the
+context to be sure. File **a GitHub issue on this repo** only when the call isn't yours to
+make: you can't pin the cause down, two defensible fixes exist, or it's too large to ride on
+the work in hand. An open issue is a report, not a queue — implement one when you're asked
+to or when it's labelled `Approved`, then close it with `Closes #<n>`.
+
 Don't record work in the repo instead: no `TODO.md`, no `NOTES.md`, no `PLAN.md`. What you
 verified, tried, and decided belongs in the commit message and the PR body.
 
 ## This repo
 
-- **The install-time bootstrap boot is what creates `webui.db` and its schema.** Doing it once during init is what lets every later write assume the config table exists — which is why neither `setupMain` nor Configure Backends carries first-run branching. Failing it fails the install, and that is correct.
-- **Seed `openai.api_base_urls`/`api_keys` as empty arrays, not absent.** With no `OPENAI_API_BASE_URL(S)` set, upstream splits an empty string and rewrites the blank entry to its own hosted endpoint, so `seed_defaults` stores that URL. It then reads back as a user-added provider, and Configure Backends derives `openai.enable` from the URL count — so any later run would enable the OpenAI API against a keyless endpoint.
-- **Backend URL ownership is per array entry.** Several backends share the `10.0.3.1` bridge host and differ only by assigned port, so nothing in the URL itself attributes it; only the recorded value does. Rewrite in place so `openai.api_keys` stays index-aligned with `openai.api_base_urls`.
-- **The model cache must be seeded before the daemon starts.** The image bakes ~265 MB into `/app/backend/data/cache`, which the volume mount hides entirely — without the copy, Whisper and tiktoken are re-fetched from HuggingFace on first use. `cp -an` is what makes it safe to re-run.
-- **The health check must be `/health`, not a port probe.** uvicorn binds the socket before FastAPI finishes its lifespan startup, so a port check reports ready while the app is still coming up.
-- **`KNOWN_BACKENDS` in `backends.ts` is the single source of truth.** Adding a compatible service is one entry there plus a manifest dependency; the action, the dependency wiring, and the state sync all derive from it.
+- **Seed `openai.api_base_urls`/`api_keys` as empty arrays, not absent.** Without them upstream stores its own hosted endpoint, which reads back as a user-added provider, and the next Configure Backends run enables the OpenAI API against it.
+- **Rewrite a backend's URL in place, never by remove-and-append.** `openai.api_keys` is index-aligned with `openai.api_base_urls`.
+- **Keep the health check on `/health`, not a port probe.** uvicorn binds the socket before FastAPI finishes starting.
+- **A new compatible backend is one `KNOWN_BACKENDS` entry in `backends.ts` plus a `backend(...)` line in `dependencies.ts`.** The action, the dependency's `enabled`, and the state sync all derive from the entry.

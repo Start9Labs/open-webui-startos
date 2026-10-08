@@ -1,7 +1,6 @@
 import { T } from '@start9labs/start-sdk'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { setDependencies } from '../dependencies'
 import {
   detectInstalled,
   KnownBackend,
@@ -28,7 +27,7 @@ const providerSpec = InputSpec.of({
     patterns: [
       {
         regex: '^https?://.+',
-        description: 'Must be an http:// or https:// URL',
+        description: i18n('Must be an http:// or https:// URL'),
       },
     ],
   }),
@@ -60,7 +59,7 @@ const inputSpec = InputSpec.of({
     return {
       name: i18n('Connect detected services'),
       description: i18n(
-        'AI backends installed on this server that Open WebUI can connect to. Check the ones you want to use — their connection URL (and API key, where it can be read automatically) is filled in for you. Open the Web UI and create your admin account before running this.',
+        "AI backends installed on this server. Checking one connects Open WebUI to it and fills in its address; unchecking one disconnects it.\n- Ollama: local models, through Ollama's own API\n- vLLM: through its OpenAI-compatible API, with the API key vLLM publishes\n- llama.cpp: through its OpenAI-compatible API; no API key is needed\n- Maple Proxy: through its OpenAI-compatible API, with a placeholder key. It works when your Maple API key is saved in Maple Proxy; otherwise replace it with your key in Open WebUI's admin settings, under Connections\nCreate your admin account in the Web UI before running this.",
       ),
       values,
       // dynamicMultiselect requires every default to be a key in values.
@@ -210,7 +209,6 @@ export const configureBackends = sdk.Action.withInput(
       ),
     })
 
-    await setDependencies(effects)
     await effects.restart()
   },
 )

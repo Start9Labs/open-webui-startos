@@ -106,7 +106,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     hostId: llamaCppHostId,
     internalPort: llamaCppPort,
     pathSuffix: '/v1',
-    // Dependency minimum, enforced by setupDependencies (which reads this
+    // Dependency minimum, published by dependencies.ts (which reads this
     // versionRange). 1.0.9544:0 is llama.cpp's keyless release: it dropped its
     // API key and now authenticates the UI/API at the StartOS proxy, so we
     // connect keyless over the service bridge. Bump this whenever a llama.cpp
@@ -145,7 +145,7 @@ export type ResolvedBaseUrls = Record<string, string | null>
  * Resolve a known backend's base URL from its binding's live bridge address
  * (`http://10.0.3.1:<assigned external port><pathSuffix>`), or `null` when the
  * backend isn't installed. Use mode `'const'` in reactive contexts (main /
- * setupDependencies) so a backend install/uninstall/port-change heals with a
+ * dependencies.ts) so a backend install/uninstall/port-change heals with a
  * single restart; `'once'` inside an action.
  */
 export async function resolveBaseUrl(
@@ -186,7 +186,7 @@ export async function detectInstalled(
 
 // --- Reading the API keys a dependency publishes on its `public` volume -----
 
-const credentialsShape = z.object({ apiKey: z.string() })
+const credentialsShape = z.looseObject({ apiKey: z.string() })
 
 /**
  * Stable host path where we bind-mount a dependency's `public` volume. Lives

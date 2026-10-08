@@ -100,7 +100,7 @@ Five optional packages, and **which ones are declared follows what is actually w
 | `maple-proxy` | Maple's privacy-preserving OpenAI-compatible inference |
 | `searxng`     | A self-hosted web-search backend                       |
 
-A backend becomes a `running` dependency the moment you select it in Configure Backends, and stops being one when you deselect it. Nothing here is required, and Open WebUI runs perfectly well pointed only at a remote provider you configure yourself.
+A backend becomes a `running` dependency, at the minimum version `KNOWN_BACKENDS` names, once you select it in Configure Backends, and stops being one when you deselect it. SearXNG is listed but never declared: web search reaches it whenever it is installed. Nothing here is required, and Open WebUI runs perfectly well pointed only at a remote provider you configure yourself.
 
 **Addresses are resolved over the LXC bridge and repaired when they move.** A backend install, uninstall, or port change re-runs the package's setup and heals the stored URL with a single restart; a routine dependency update, where the assigned port does not change, restarts nothing.
 
@@ -142,14 +142,16 @@ Selects which LLM backends Open WebUI connects to — the installed StartOS ones
 Points web search back at SearXNG and resumes maintaining the address.
 
 - **When to run it:** the search address was changed by hand and Open WebUI stopped keeping it current. This is what the task below asks for.
+- **Confirmation:** asks before running, since it replaces the search address and restarts the service.
 - **What it changes:** the search endpoint in `webui.db`, and the ownership record that makes the package own it again.
 - **Cost:** seconds, then a restart.
 - **Repeat safety:** idempotent, and it touches nothing else.
 
 ### Reset Admin Password
 
-Generates a new password for the admin account. Run it when locked out.
+Generates a new password for the first admin account. Run it when locked out.
 
+- **Confirmation:** asks before running, since the current password stops working.
 - **Cost:** seconds.
 - **Repeat safety:** safe to re-run; each run generates a fresh password.
 - **Outputs:** the new password. It is not recoverable afterwards.
@@ -219,7 +221,7 @@ startos_managed_env_vars:
   - ENABLE_VERSION_UPDATE_CHECK
   - ENABLE_ADMIN_ANALYTICS
   - WEBUI_SESSION_COOKIE_SECURE
-dependencies: # all optional; declared only while selected in Configure Backends
+dependencies: # all optional; a backend is declared only while selected in Configure Backends, searxng never
   - ollama
   - vllm
   - llama-cpp

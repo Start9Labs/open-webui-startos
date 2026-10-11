@@ -36,7 +36,13 @@ const dict = {
   'The web search address is one this server does not manage, so searches may not reach SearXNG. Reconnect SearXNG to restore it.': 37,
   'Must be an http:// or https:// URL': 39,
   "Replaces the web search address in Open WebUI with SearXNG's and restarts Open WebUI.": 40,
-  'Replaces the password of the first admin account. Its current password stops working.': 41,
+  'Replaces the password of the first admin account and signs it out on every device.': 41,
+  'Reset Admin Two-Factor Authentication': 42,
+  'Recover the first admin account when its authenticator and recovery codes are lost.': 43,
+  "Replaces the first admin account's authenticator and recovery codes and signs it out on every device. Only run this to recover that account.": 44,
+  'Create the first admin account in the Web UI before recovering two-factor authentication.': 45,
+  'Sign in with your password, use this one-time recovery token when prompted, and enroll a new authenticator. The token expires in 30 minutes. If you also need to reset your password, do that first: resetting it invalidates this token.': 46,
+  'Start Open WebUI once after updating before using account recovery.': 47,
 } as const
 
 export type I18nKey = keyof typeof dict

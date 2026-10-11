@@ -67,7 +67,10 @@ finally:
     conn.close()
 
 async def recover():
-${operation.split('\n').map((line) => `    ${line}`).join('\n')}
+${operation
+  .split('\n')
+  .map((line) => `    ${line}`)
+  .join('\n')}
 
 with redirect_stdout(sys.stderr):
     result = asyncio.run(recover())

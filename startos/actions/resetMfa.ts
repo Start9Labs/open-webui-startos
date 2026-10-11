@@ -11,7 +11,7 @@ export const resetMfa = sdk.Action.withoutInput(
       'Recover the first admin account when its authenticator and recovery codes are lost.',
     ),
     warning: i18n(
-      'Replaces the first admin account\'s authenticator and recovery codes and signs it out on every device. Only run this to recover that account.',
+      "Replaces the first admin account's authenticator and recovery codes and signs it out on every device. Only run this to recover that account.",
     ),
     allowedStatuses: 'any',
     group: null,

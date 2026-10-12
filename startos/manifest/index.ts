@@ -14,7 +14,7 @@ export const manifest = setupManifest({
   images: {
     'open-webui': {
       source: {
-        dockerTag: 'ghcr.io/open-webui/open-webui:0.11.4',
+        dockerTag: 'ghcr.io/open-webui/open-webui:0.12.0',
       },
       arch: ['x86_64', 'aarch64'],
     },

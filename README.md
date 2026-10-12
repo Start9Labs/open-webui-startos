@@ -118,7 +118,7 @@ The port is bound on the `ui-multi` MultiHost and is not masked.
 
 ## Installation and First-Run Flow
 
-**Install runs Open WebUI once, to completion, before the service ever starts.** Only that first launch creates `webui.db` and its schema — the migrations run at import and the config table is seeded straight after — so doing it during install is what lets every later write assume the table is there, with no first-run branching anywhere else in the package.
+**Install runs Open WebUI once, to completion, before the service ever starts.** Only that first launch creates `webui.db` and its schema — migrations run at import and configuration defaults are seeded during startup — so doing it during install is what lets every later write assume the table is there, with no first-run branching anywhere else in the package.
 
 It is allowed ten minutes: a fresh database plus the embedding model load is slow on a slow disk. Failing that fails the install and rolls it back, which is the right outcome, because everything downstream assumes this boot happened.
 
@@ -126,7 +126,7 @@ No credential is shown. **The first account created in the web UI becomes the ad
 
 ## Actions
 
-Three actions, all available whether or not the service is running.
+Four actions, all available whether or not the service is running.
 
 ### Configure Backends
 
@@ -151,10 +151,23 @@ Points web search back at SearXNG and resumes maintaining the address.
 
 Generates a new password for the first admin account. Run it when locked out.
 
-- **Confirmation:** asks before running, since the current password stops working.
-- **Cost:** seconds.
+- **Confirmation:** asks before running, since the current password stops working and the account is signed out on every device.
+- **What it changes:** uses upstream's password update operation to rotate the session stamp and clear pending MFA challenges and recovery tickets along with the password. The enrolled authenticator remains in place.
+- **Cost:** seconds, with up to two minutes allowed for importing upstream's authentication modules.
 - **Repeat safety:** safe to re-run; each run generates a fresh password.
 - **Outputs:** the new password. It is not recoverable afterwards.
+
+### Reset Admin Two-Factor Authentication
+
+Recovers the first admin account when its authenticator and recovery codes are lost, using the same upstream operation as `open-webui mfa reset`.
+
+- **Confirmation:** asks before replacing the authenticator and recovery codes and signing the account out on every device.
+- **What it changes:** clears the old factor and recovery codes, rotates the session stamp, and creates a hashed one-time recovery ticket. The password is unchanged; global two-factor enforcement remains enabled if configured.
+- **Cost:** seconds, with up to two minutes allowed for importing upstream's authentication modules.
+- **Outputs:** a masked, copyable token valid for 30 minutes. Sign in with the password, redeem the token, and enroll a new authenticator.
+- **Repeat safety:** a later run replaces the previous token. Reset the password first if both credentials are lost: a password reset invalidates pending MFA recovery tickets.
+
+Both recovery actions select the first administrator by `created_at`, then `id`, in a temporary container with the existing session secret and data volume. They refuse to run before upstream has migrated the authentication schema and disable migrations in the recovery container.
 
 ## Tasks
 
@@ -233,6 +246,7 @@ actions:
   - configure-backends
   - reconnect-searxng
   - reset-password
+  - reset-admin-mfa
 tasks:
   - { action: reconnect-searxng, severity: important } # conditional, not install-time
 health_checks:

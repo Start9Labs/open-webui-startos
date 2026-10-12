@@ -28,8 +28,15 @@ Installing takes a few minutes: StartOS starts Open WebUI once during install so
 
 The **Web UI** is where users sign in, chat with models, upload documents, and where the admin manages users from the **Admin Panel** and global settings from the **Admin** section of **Settings**. Upstream documentation covers the full feature set; everything you'd configure in a standalone Open WebUI install is configured here the same way.
 
+### Two-factor sign-in
+
+An administrator can require an authenticator app under **Settings → Authentication** in the **Admin** section. Keep the single-use recovery codes somewhere safe. If the first admin loses both the authenticator and those codes, use **Reset Admin Two-Factor Authentication** on StartOS, sign in with the password, redeem the returned token within 30 minutes, and enroll a new authenticator.
+
+If both the password and authenticator are lost, run **Reset Admin Password first**, then recover two-factor authentication. Resetting the password invalidates any two-factor recovery token issued earlier. Other users should contact their administrator for account recovery.
+
 ### Actions
 
 - **Configure Backends** — choose which LLM backends Open WebUI talks to. Re-run any time you add or remove a provider. Open WebUI restarts so the new wiring takes effect.
 - **Reconnect SearXNG** — restore web search's connection to SearXNG. Open WebUI normally keeps that address correct for you, but if it gets changed by hand in **Settings → Web Search** it stops doing so, and web search breaks with no way to fix it from the interface. This puts the right address back and resumes maintaining it, after asking you to confirm. Open WebUI restarts; nothing else you've configured is touched. You don't have to go looking for it — if the address is one Open WebUI can no longer manage, StartOS prompts you to run this. (Leave the Searxng Query URL field alone and you'll never need it at all.)
-- **Reset Admin Password** — generate a fresh random password for the first admin user. Useful if you've lost the password. It asks for confirmation first, since the old password stops working. The new password is shown once; copy it before dismissing.
+- **Reset Admin Password** — generate a fresh random password for the first admin user. Useful if you've lost the password. It asks for confirmation first, since the old password stops working and the account is signed out on every device. Its authenticator is not removed. The new password is shown once; copy it before dismissing.
+- **Reset Admin Two-Factor Authentication** — recover the first admin account after losing its authenticator and recovery codes. It asks for confirmation before replacing both and signing the account out on every device. The password does not change. Copy the one-time token and use it at sign-in within 30 minutes to enroll a new authenticator; running the action again replaces the previous token.

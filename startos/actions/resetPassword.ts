@@ -1,7 +1,7 @@
 import { utils } from '@start9labs/start-sdk'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { mainMounts, webuiDb } from '../utils'
+import { runAdminAuthScript } from '../utils'
 import { adminExists } from '../webuiConfig'
 
 export const resetPassword = sdk.Action.withoutInput(
@@ -11,7 +11,7 @@ export const resetPassword = sdk.Action.withoutInput(
     name: i18n('Reset Admin Password'),
     description: i18n('Reset the admin user password in case you forget it'),
     warning: i18n(
-      'Replaces the password of the first admin account. Its current password stops working.',
+      'Replaces the password of the first admin account and signs it out on every device.',
     ),
     allowedStatuses: 'any',
     group: null,
@@ -36,30 +36,15 @@ export const resetPassword = sdk.Action.withoutInput(
       len: 22,
     })
 
-    await sdk.SubContainer.withTemp(
+    await runAdminAuthScript(
       effects,
-      { imageId: 'open-webui' },
-      mainMounts,
-      'reset-pass',
-      async (subc) => {
-        await subc.execFail([
-          'python3',
-          '-c',
-          [
-            'import sqlite3, bcrypt',
-            `new_pw = "${newPassword}"`,
-            `hashed = bcrypt.hashpw(new_pw.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")`,
-            `conn = sqlite3.connect("${webuiDb}")`,
-            `c = conn.cursor()`,
-            `c.execute("SELECT id FROM user WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1")`,
-            `row = c.fetchone()`,
-            `assert row, "No admin user found"`,
-            `c.execute("UPDATE auth SET password = ? WHERE id = ?", (hashed, row[0]))`,
-            `conn.commit()`,
-            `conn.close()`,
-          ].join('\n'),
-        ])
-      },
+      `import bcrypt
+from open_webui.models.auths import Auths
+hashed = bcrypt.hashpw(inputs['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+if not await Auths.update_user_password_by_id(admin_id, hashed):
+    raise RuntimeError('Admin password could not be reset')
+return 'updated'`,
+      { password: newPassword },
     )
 
     return {

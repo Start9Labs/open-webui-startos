@@ -25,7 +25,6 @@
 - [Network Access and Interfaces](#network-access-and-interfaces)
 - [Installation and First-Run Flow](#installation-and-first-run-flow)
 - [Actions](#actions)
-- [Updates](#updates)
 - [Tasks](#tasks)
 - [Health Checks](#health-checks)
 - [Backups and Restore](#backups-and-restore)
@@ -127,7 +126,7 @@ No credential is shown. **The first account created in the web UI becomes the ad
 
 ## Actions
 
-Four actions, all available whether or not the service is running. Account recovery requires an existing administrator and a completed first start after updating, so the authentication schema is ready.
+Four actions, all available whether or not the service is running.
 
 ### Configure Backends
 
@@ -169,10 +168,6 @@ Recovers the first admin account when its authenticator and recovery codes are l
 - **Repeat safety:** a later run replaces the previous token. Reset the password first if both credentials are lost: a password reset invalidates pending MFA recovery tickets.
 
 Both recovery actions select the first administrator by `created_at`, then `id`, in a temporary container with the existing session secret and data volume. They refuse to run before upstream has migrated the authentication schema and disable migrations in the recovery container.
-
-## Updates
-
-Back up before updating. Open WebUI performs its own SQLite schema migrations on the first start, including authentication state, group hierarchy and workspace version histories. There is no wrapper data migration or embedding-model change; the default Chroma store and model-cache paths remain unchanged. First-start duration depends on the existing data. Recovery actions must wait until that start completes.
 
 ## Tasks
 

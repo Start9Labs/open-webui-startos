@@ -1,8 +1,5 @@
 {
   "name": "open-webui-startos",
-  "scripts": {
-    "check": "tsc --noEmit"
-  },
   "dependencies": {
     "@start9labs/start-sdk": "3.0.4",
     "llama-cpp-startos": "github:Start9Labs/llama-cpp-startos#next",

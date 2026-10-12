@@ -34,10 +34,6 @@ An administrator can require an authenticator app under **Settings → Authentic
 
 If both the password and authenticator are lost, run **Reset Admin Password first**, then recover two-factor authentication. Resetting the password invalidates any two-factor recovery token issued earlier. Other users should contact their administrator for account recovery.
 
-### Updating
-
-Back up Open WebUI before updating. The first start migrates its database and may take longer than usual. Start it once after updating before running either account-recovery action; afterwards those actions also work with the service stopped.
-
 ### Actions
 
 - **Configure Backends** — choose which LLM backends Open WebUI talks to. Re-run any time you add or remove a provider. Open WebUI restarts so the new wiring takes effect.

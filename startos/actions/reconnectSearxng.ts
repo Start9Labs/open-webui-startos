@@ -82,6 +82,7 @@ export const reconnectSearxng = sdk.Action.withoutInput(
         masked: false,
         copyable: true,
         qr: false,
+        launchable: false,
       },
     }
   },

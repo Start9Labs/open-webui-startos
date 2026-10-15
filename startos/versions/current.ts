@@ -1,58 +1,58 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.12.0:0',
+  version: '0.12.2:0',
   releaseNotes: {
-    en_US: `Updated Open WebUI to 0.12.0.
+    en_US: `Updated Open WebUI to 0.12.2.
 
-- Adds authenticator-based two-factor sign-in, replies in shared chats, nested groups, model controls, and version history for models, skills, tools and functions.
-- Includes security and access-control fixes, plus improvements to tool calls, document search and chat reliability.
-- StartOS adds Reset Admin Two-Factor Authentication, returning a one-time recovery token valid for 30 minutes. Reset Admin Password now also signs the account out on every device without removing its authenticator.
-- Internal update to start-sdk 3.0.4.
+- Adds external apps in channels, side-by-side text revision comparison, and skill archive exports.
+- Fixes reconnect loops after sign-in, recurring automation scheduling, tool approvals losing sources, and tool search compatibility with strict providers.
+- Includes security fixes for channel message metadata, retrieval access checks, and SCIM administrator deletion.
+- Internal update to start-sdk 3.0.6.
 
-Back up before updating: upstream migrates the database on first start, which may take longer than usual. Start Open WebUI once after updating before using either account-recovery action.
+Back up before updating: upstream migrates the database on first start, including channel membership changes and missing sign-in records for SCIM-created users. Allow extra time for that first start.
 
-[Full upstream release notes](https://github.com/open-webui/open-webui/releases/tag/v0.12.0)`,
-    es_ES: `Se ha actualizado Open WebUI a 0.12.0.
+[Upstream 0.12.1 release notes](https://github.com/open-webui/open-webui/releases/tag/v0.12.1) · [Upstream 0.12.2 release notes](https://github.com/open-webui/open-webui/releases/tag/v0.12.2)`,
+    es_ES: `Se ha actualizado Open WebUI a 0.12.2.
 
-- Añade inicio de sesión de dos factores con autenticador, respuestas en chats compartidos, grupos anidados, controles de modelos e historial de versiones de modelos, habilidades, herramientas y funciones.
-- Incluye correcciones de seguridad y control de acceso, además de mejoras en llamadas a herramientas, búsqueda de documentos y fiabilidad del chat.
-- StartOS añade Restablecer la autenticación de dos factores del administrador, que devuelve un token de recuperación de un solo uso válido durante 30 minutos. Restablecer contraseña de administrador ahora también cierra las sesiones de la cuenta en todos los dispositivos sin eliminar su autenticador.
-- Actualización interna a start-sdk 3.0.4.
+- Añade aplicaciones externas en canales, comparación de revisiones de texto en paralelo y exportación de archivos de habilidades.
+- Corrige bucles de reconexión tras iniciar sesión, la programación de automatizaciones recurrentes, la pérdida de fuentes al aprobar herramientas y la compatibilidad de la búsqueda de herramientas con proveedores estrictos.
+- Incluye correcciones de seguridad para los metadatos de mensajes de canales, las comprobaciones de acceso a la recuperación de documentos y la eliminación de administradores mediante SCIM.
+- Actualización interna a start-sdk 3.0.6.
 
-Haz una copia de seguridad antes de actualizar: Open WebUI migra la base de datos en el primer arranque, que puede tardar más de lo habitual. Inicia Open WebUI una vez después de actualizar antes de usar cualquiera de las acciones de recuperación de cuentas.
+Haz una copia de seguridad antes de actualizar: Open WebUI migra la base de datos en el primer arranque, incluidos cambios en la pertenencia a canales y registros de inicio de sesión que faltan para usuarios creados mediante SCIM. Deja más tiempo para ese primer arranque.
 
-[Notas completas de la versión original](https://github.com/open-webui/open-webui/releases/tag/v0.12.0)`,
-    de_DE: `Open WebUI wurde auf 0.12.0 aktualisiert.
+[Notas de la versión original 0.12.1](https://github.com/open-webui/open-webui/releases/tag/v0.12.1) · [Notas de la versión original 0.12.2](https://github.com/open-webui/open-webui/releases/tag/v0.12.2)`,
+    de_DE: `Open WebUI wurde auf 0.12.2 aktualisiert.
 
-- Neu sind Zwei-Faktor-Anmeldung mit Authenticator, Antworten in geteilten Chats, verschachtelte Gruppen, Modell-Steuerelemente und Versionsverläufe für Modelle, Skills, Tools und Funktionen.
-- Enthält Sicherheits- und Zugriffskorrekturen sowie Verbesserungen bei Tool-Aufrufen, Dokumentsuche und Chat-Zuverlässigkeit.
-- StartOS ergänzt „Zwei-Faktor-Authentifizierung des Admins zurücksetzen“ mit einem einmaligen Wiederherstellungstoken, das 30 Minuten gültig ist. „Admin-Passwort zurücksetzen“ meldet das Konto nun auch auf allen Geräten ab, ohne den Authenticator zu entfernen.
-- Internes Update auf start-sdk 3.0.4.
+- Ergänzt externe Apps in Kanälen, Textvergleich von Revisionen nebeneinander und den Export von Skill-Archiven.
+- Behebt Wiederverbindungsschleifen nach der Anmeldung, die Planung wiederkehrender Automatisierungen, verlorene Quellen nach Tool-Freigaben und die Kompatibilität der Tool-Suche mit strikten Anbietern.
+- Enthält Sicherheitskorrekturen für Kanalnachrichten-Metadaten, Zugriffskontrollen beim Dokumentenabruf und das Löschen von Administratoren über SCIM.
+- Internes Update auf start-sdk 3.0.6.
 
-Vor dem Update eine Sicherung erstellen: Open WebUI migriert die Datenbank beim ersten Start, der länger als üblich dauern kann. Starte Open WebUI nach dem Update einmal, bevor du eine der beiden Kontowiederherstellungsaktionen verwendest.
+Vor dem Update eine Sicherung erstellen: Open WebUI migriert die Datenbank beim ersten Start, einschließlich Änderungen an Kanalmitgliedschaften und fehlender Anmeldedatensätze für über SCIM erstellte Benutzer. Plane für diesen ersten Start mehr Zeit ein.
 
-[Vollständige Versionshinweise des Ursprungsprojekts](https://github.com/open-webui/open-webui/releases/tag/v0.12.0)`,
-    pl_PL: `Zaktualizowano Open WebUI do 0.12.0.
+[Versionshinweise des Ursprungsprojekts 0.12.1](https://github.com/open-webui/open-webui/releases/tag/v0.12.1) · [Versionshinweise des Ursprungsprojekts 0.12.2](https://github.com/open-webui/open-webui/releases/tag/v0.12.2)`,
+    pl_PL: `Zaktualizowano Open WebUI do 0.12.2.
 
-- Dodaje logowanie dwuskładnikowe z aplikacją uwierzytelniającą, odpowiedzi we współdzielonych czatach, zagnieżdżone grupy, elementy sterujące modelami oraz historię wersji modeli, umiejętności, narzędzi i funkcji.
-- Zawiera poprawki bezpieczeństwa i kontroli dostępu oraz usprawnienia wywołań narzędzi, wyszukiwania dokumentów i niezawodności czatu.
-- StartOS dodaje akcję Zresetuj uwierzytelnianie dwuskładnikowe administratora, która zwraca jednorazowy token odzyskiwania ważny przez 30 minut. Zresetuj hasło administratora teraz również wylogowuje konto ze wszystkich urządzeń bez usuwania konfiguracji aplikacji uwierzytelniającej.
-- Wewnętrzna aktualizacja do start-sdk 3.0.4.
+- Dodaje zewnętrzne aplikacje w kanałach, porównywanie wersji tekstu obok siebie i eksport archiwów umiejętności.
+- Naprawia pętle ponownego łączenia po zalogowaniu, harmonogramy cyklicznych automatyzacji, utratę źródeł po zatwierdzeniu narzędzi i zgodność wyszukiwania narzędzi z rygorystycznymi dostawcami.
+- Zawiera poprawki bezpieczeństwa metadanych wiadomości w kanałach, kontroli dostępu przy pobieraniu dokumentów i usuwania administratorów przez SCIM.
+- Wewnętrzna aktualizacja do start-sdk 3.0.6.
 
-Przed aktualizacją wykonaj kopię zapasową: Open WebUI migruje bazę danych przy pierwszym uruchomieniu, które może potrwać dłużej niż zwykle. Uruchom Open WebUI raz po aktualizacji przed użyciem którejkolwiek z akcji odzyskiwania konta.
+Przed aktualizacją wykonaj kopię zapasową: Open WebUI migruje bazę danych przy pierwszym uruchomieniu, w tym członkostwo w kanałach i brakujące rekordy logowania użytkowników utworzonych przez SCIM. Zarezerwuj więcej czasu na to pierwsze uruchomienie.
 
-[Pełne informacje o wydaniu projektu źródłowego](https://github.com/open-webui/open-webui/releases/tag/v0.12.0)`,
-    fr_FR: `Open WebUI a été mis à jour vers 0.12.0.
+[Informacje o wydaniu projektu źródłowego 0.12.1](https://github.com/open-webui/open-webui/releases/tag/v0.12.1) · [Informacje o wydaniu projektu źródłowego 0.12.2](https://github.com/open-webui/open-webui/releases/tag/v0.12.2)`,
+    fr_FR: `Open WebUI a été mis à jour vers 0.12.2.
 
-- Ajoute la connexion à deux facteurs avec authentificateur, les réponses dans les chats partagés, les groupes imbriqués, les contrôles de modèles et l’historique des versions des modèles, compétences, outils et fonctions.
-- Inclut des correctifs de sécurité et de contrôle d’accès, ainsi que des améliorations des appels d’outils, de la recherche documentaire et de la fiabilité des conversations.
-- StartOS ajoute Réinitialiser l’authentification à deux facteurs de l’administrateur, qui fournit un jeton de récupération à usage unique valable 30 minutes. Réinitialiser le mot de passe administrateur déconnecte désormais aussi le compte de tous les appareils sans supprimer son authentificateur.
-- Mise à jour interne vers start-sdk 3.0.4.
+- Ajoute les applications externes dans les canaux, la comparaison côte à côte des révisions de texte et l’export d’archives de compétences.
+- Corrige les boucles de reconnexion après connexion, la planification des automatisations récurrentes, la perte des sources après approbation des outils et la compatibilité de la recherche d’outils avec les fournisseurs stricts.
+- Inclut des correctifs de sécurité pour les métadonnées des messages de canaux, les contrôles d’accès à la recherche documentaire et la suppression d’administrateurs via SCIM.
+- Mise à jour interne vers start-sdk 3.0.6.
 
-Sauvegardez avant la mise à jour : Open WebUI migre la base de données au premier démarrage, qui peut prendre plus de temps que d’habitude. Démarrez Open WebUI une fois après la mise à jour avant d’utiliser l’une des deux actions de récupération de compte.
+Sauvegardez avant la mise à jour : Open WebUI migre la base de données au premier démarrage, notamment les adhésions aux canaux et les enregistrements de connexion manquants des utilisateurs créés via SCIM. Prévoyez davantage de temps pour ce premier démarrage.
 
-[Notes de version complètes du projet en amont](https://github.com/open-webui/open-webui/releases/tag/v0.12.0)`,
+[Notes de version en amont 0.12.1](https://github.com/open-webui/open-webui/releases/tag/v0.12.1) · [Notes de version en amont 0.12.2](https://github.com/open-webui/open-webui/releases/tag/v0.12.2)`,
   },
   migrations: {
     up: async ({ effects }) => {},

@@ -57,6 +57,7 @@ return 'updated'`,
         masked: true,
         copyable: true,
         qr: false,
+        launchable: false,
       },
     }
   },

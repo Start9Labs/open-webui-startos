@@ -42,6 +42,7 @@ return await reset_mfa(admin_email, 'StartOS administrator account recovery')`,
         masked: true,
         copyable: true,
         qr: false,
+        launchable: false,
       },
     }
   },

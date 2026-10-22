@@ -35,13 +35,13 @@
 
 ## Image and Container Runtime
 
-One upstream image, unmodified.
+One upstream image, with its system CA store and `certifi` upgraded by the root `Dockerfile` until upstream ships an image built on fixed ones.
 
-| Property      | Value                           |
-| ------------- | ------------------------------- |
-| Image         | `ghcr.io/open-webui/open-webui` |
-| Architectures | x86_64, aarch64                 |
-| Entrypoint    | Upstream's                      |
+| Property      | Value                                               |
+| ------------- | --------------------------------------------------- |
+| Image         | `ghcr.io/open-webui/open-webui` + root `Dockerfile` |
+| Architectures | x86_64, aarch64                                     |
+| Entrypoint    | Upstream's                                          |
 
 | Subcontainer           | Purpose                                                 |
 | ---------------------- | ------------------------------------------------------- |
@@ -215,7 +215,7 @@ Both volumes are copied wholesale — `sdk.Backups.ofVolumes('open-webui', 'star
 
 ```yaml
 package_id: open-webui
-image: ghcr.io/open-webui/open-webui
+image: ghcr.io/open-webui/open-webui + root Dockerfile (CA store and certifi upgrade)
 architectures:
   - x86_64
   - aarch64

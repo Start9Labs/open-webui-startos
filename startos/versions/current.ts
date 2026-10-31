@@ -1,43 +1,58 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.12.4:0',
+  version: '0.12.5:0',
   releaseNotes: {
-    en_US: `Updated Open WebUI to 0.12.4, including security fixes, clearer context compaction, bulk chat and file management, and fixes for shared chats and SQLite connection leaks.
+    en_US: `Updated Open WebUI to 0.12.5.
 
-The image now uses Python 3.12 on Debian 13. Custom functions, tools and pip-installed packages must support Python 3.12. Upstream now includes fixed CA stores, replacing the temporary StartOS image layer.
+- Includes security fixes; upstream strongly recommends updating.
+- Adds pages and live presence in notes, faster chat and knowledge-base searches, and lower-memory document embedding.
+- Fixes chat search filters, inflated token counts, interrupted tool calls, and model selection persistence.
+- Internal update to start-sdk 3.1.1.
 
-If you use tool servers or Open Terminal saved in personal Integrations settings, enable Direct Integrations under Admin Settings > Connections; those connections no longer work while it is off. Sharing is now changed only through each item's Access settings.
+Back up before updating: upstream converts existing notes to pages and moves their attachments into the first page. Check notes and attachments after updating. Automation failure notifications now go to targets for the owner rather than system-only webhooks; enable the event in Settings > Notifications if needed.
 
-[Full upstream release notes](https://github.com/open-webui/open-webui/releases/tag/v0.12.4)`,
-    es_ES: `Se ha actualizado Open WebUI a 0.12.4, con correcciones de seguridad, compactación del contexto más clara, gestión masiva de chats y archivos y correcciones para chats compartidos y fugas de conexiones SQLite.
+[Full upstream release notes](https://github.com/open-webui/open-webui/releases/tag/v0.12.5)`,
+    es_ES: `Se ha actualizado Open WebUI a 0.12.5.
 
-La imagen ahora usa Python 3.12 sobre Debian 13. Las funciones, herramientas y paquetes instalados con pip personalizados deben ser compatibles con Python 3.12. La imagen original ya incluye almacenes de certificados corregidos, que sustituyen la capa temporal de StartOS.
+- Incluye correcciones de seguridad; el proyecto original recomienda encarecidamente actualizar.
+- Añade páginas y presencia en tiempo real en las notas, búsquedas más rápidas en chats y bases de conocimiento e incrustación de documentos con menor uso de memoria.
+- Corrige los filtros de búsqueda de chats, los recuentos de tokens inflados, las llamadas a herramientas interrumpidas y la persistencia del modelo seleccionado.
+- Actualización interna a start-sdk 3.1.1.
 
-Si usas servidores de herramientas u Open Terminal guardados en los ajustes personales de Integraciones, activa Integraciones directas en Configuración de administración > Conexiones; esas conexiones ya no funcionan mientras esté desactivado. El acceso compartido ahora se cambia solo en los ajustes de Acceso de cada elemento.
+Haz una copia de seguridad antes de actualizar: Open WebUI convierte las notas existentes en páginas y mueve sus archivos adjuntos a la primera página. Comprueba las notas y sus adjuntos después de actualizar. Las notificaciones de fallos de automatización ahora se envían a los destinos del propietario en lugar de a los webhooks exclusivos del sistema; activa el evento en Ajustes > Notificaciones si lo necesitas.
 
-[Notas completas de la versión original](https://github.com/open-webui/open-webui/releases/tag/v0.12.4)`,
-    de_DE: `Open WebUI wurde auf 0.12.4 aktualisiert, mit Sicherheitskorrekturen, übersichtlicherer Kontextkomprimierung, Sammelverwaltung von Chats und Dateien sowie Korrekturen für geteilte Chats und verlorene SQLite-Verbindungen.
+[Notas completas de la versión original](https://github.com/open-webui/open-webui/releases/tag/v0.12.5)`,
+    de_DE: `Open WebUI wurde auf 0.12.5 aktualisiert.
 
-Das Image nutzt nun Python 3.12 auf Debian 13. Eigene Funktionen, Tools und mit pip installierte Pakete müssen Python 3.12 unterstützen. Das Upstream-Image enthält korrigierte Zertifikatsspeicher und ersetzt die vorübergehende StartOS-Image-Schicht.
+- Enthält Sicherheitskorrekturen; das Ursprungsprojekt empfiehlt dringend ein Update.
+- Ergänzt Seiten und Live-Anwesenheit in Notizen, schnellere Chat- und Wissensdatenbank-Suchen sowie speichersparendere Dokumenten-Einbettung.
+- Behebt Chat-Suchfilter, überhöhte Token-Zahlen, unterbrochene Tool-Aufrufe und das Speichern der Modellauswahl.
+- Internes Update auf start-sdk 3.1.1.
 
-Wer Tool-Server oder Open Terminal in den persönlichen Integrationseinstellungen nutzt, muss Direkte Integrationen unter Admin-Einstellungen > Verbindungen aktivieren; diese Verbindungen funktionieren nicht mehr, solange die Option ausgeschaltet ist. Freigaben werden nun ausschließlich in den Zugriffseinstellungen des jeweiligen Elements geändert.
+Vor dem Update eine Sicherung erstellen: Open WebUI wandelt bestehende Notizen in Seiten um und verschiebt ihre Anhänge auf die erste Seite. Notizen und Anhänge nach dem Update prüfen. Fehlermeldungen von Automatisierungen gehen nun an Benachrichtigungsziele des Besitzers statt an reine System-Webhooks; das Ereignis bei Bedarf unter Einstellungen > Benachrichtigungen aktivieren.
 
-[Vollständige Versionshinweise des Ursprungsprojekts](https://github.com/open-webui/open-webui/releases/tag/v0.12.4)`,
-    pl_PL: `Zaktualizowano Open WebUI do 0.12.4: poprawki bezpieczeństwa, czytelniejsza kompakcja kontekstu, zbiorcze zarządzanie czatami i plikami oraz naprawy współdzielonych czatów i wycieków połączeń SQLite.
+[Vollständige Versionshinweise des Ursprungsprojekts](https://github.com/open-webui/open-webui/releases/tag/v0.12.5)`,
+    pl_PL: `Zaktualizowano Open WebUI do 0.12.5.
 
-Obraz używa teraz Pythona 3.12 na Debianie 13. Własne funkcje, narzędzia i pakiety instalowane przez pip muszą obsługiwać Pythona 3.12. Obraz źródłowy zawiera poprawione magazyny certyfikatów, zastępując tymczasową warstwę obrazu StartOS.
+- Zawiera poprawki bezpieczeństwa; autorzy zdecydowanie zalecają aktualizację.
+- Dodaje strony i obecność na żywo w notatkach, szybsze wyszukiwanie czatów i baz wiedzy oraz oszczędniejsze pamięciowo tworzenie osadzeń dokumentów.
+- Naprawia filtry wyszukiwania czatów, zawyżone liczniki tokenów, przerywane wywołania narzędzi i zapisywanie wybranego modelu.
+- Wewnętrzna aktualizacja do start-sdk 3.1.1.
 
-Jeśli używasz serwerów narzędzi lub Open Terminal zapisanych w osobistych ustawieniach Integracji, włącz Integracje bezpośrednie w Ustawieniach administratora > Połączenia; te połączenia nie działają już przy wyłączonej opcji. Udostępnianie zmienia się teraz wyłącznie w ustawieniach Dostępu danego elementu.
+Przed aktualizacją wykonaj kopię zapasową: Open WebUI przekształca istniejące notatki w strony i przenosi ich załączniki na pierwszą stronę. Po aktualizacji sprawdź notatki i załączniki. Powiadomienia o błędach automatyzacji trafiają teraz do celów powiadomień właściciela zamiast do webhooków przeznaczonych wyłącznie dla systemu; w razie potrzeby włącz to zdarzenie w Ustawieniach > Powiadomienia.
 
-[Pełne informacje o wydaniu projektu źródłowego](https://github.com/open-webui/open-webui/releases/tag/v0.12.4)`,
-    fr_FR: `Open WebUI a été mis à jour vers 0.12.4 : correctifs de sécurité, compactage du contexte plus lisible, gestion groupée des conversations et fichiers, et corrections des conversations partagées et des fuites de connexions SQLite.
+[Pełne informacje o wydaniu projektu źródłowego](https://github.com/open-webui/open-webui/releases/tag/v0.12.5)`,
+    fr_FR: `Open WebUI a été mis à jour vers 0.12.5.
 
-L'image utilise désormais Python 3.12 sur Debian 13. Les fonctions, outils et paquets personnalisés installés avec pip doivent prendre en charge Python 3.12. L'image en amont contient des magasins de certificats corrigés, remplaçant la couche temporaire de l'image StartOS.
+- Inclut des correctifs de sécurité ; le projet en amont recommande vivement la mise à jour.
+- Ajoute des pages et la présence en temps réel dans les notes, accélère la recherche dans les conversations et bases de connaissances et réduit la mémoire utilisée pour les plongements de documents.
+- Corrige les filtres de recherche des conversations, les nombres de jetons gonflés, les appels d'outils interrompus et la conservation du modèle choisi.
+- Mise à jour interne vers start-sdk 3.1.1.
 
-Si vous utilisez des serveurs d'outils ou Open Terminal enregistrés dans les réglages personnels d'Intégrations, activez les Intégrations directes dans Paramètres d'administration > Connexions ; ces connexions ne fonctionnent plus lorsque cette option est désactivée. Le partage se modifie désormais uniquement dans les réglages d'Accès de chaque élément.
+Sauvegardez avant la mise à jour : Open WebUI convertit les notes existantes en pages et déplace leurs pièces jointes dans la première page. Vérifiez les notes et pièces jointes après la mise à jour. Les notifications d'échec des automatisations vont désormais aux cibles du propriétaire plutôt qu'aux webhooks réservés au système ; activez cet événement dans Paramètres > Notifications si nécessaire.
 
-[Notes de version complètes du projet en amont](https://github.com/open-webui/open-webui/releases/tag/v0.12.4)`,
+[Notes de version complètes du projet en amont](https://github.com/open-webui/open-webui/releases/tag/v0.12.5)`,
   },
   migrations: {
     up: async ({ effects }) => {},

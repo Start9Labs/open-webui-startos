@@ -10,7 +10,7 @@ import {
   apiPort as vllmPort,
 } from 'vllm-startos/startos/utils'
 import {
-  apiHostId as llamaCppHostId,
+  apiKeyHostId as llamaCppHostId,
   apiPort as llamaCppPort,
 } from 'llama-cpp-startos/startos/utils'
 import {
@@ -67,9 +67,9 @@ export type KnownBackend = {
   healthCheck: string
   keySource: KeySource
   /**
-   * For `public` backends: throw if the key can't be read (`true`, e.g. vLLM),
-   * or fall back to a placeholder (`false`, e.g. llama.cpp before it ships the
-   * public-credentials release).
+   * For `public` backends: throw if the key can't be read (`true`), or fall
+   * back to the stored key or a placeholder (`false`).
+   * Throwing blocks startup.
    */
   keyRequired: boolean
 }
@@ -107,13 +107,12 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     internalPort: llamaCppPort,
     pathSuffix: '/v1',
     // Dependency minimum, published by dependencies.ts (which reads this
-    // versionRange). 1.0.9544:0 is llama.cpp's keyless release: it dropped its
-    // API key and now authenticates the UI/API at the StartOS proxy, so we
-    // connect keyless over the service bridge. Bump this whenever a llama.cpp
-    // change breaks how we connect.
-    versionRange: '>=1.0.9994:1',
+    // versionRange): the first release with the Bearer-gated API host and a
+    // published key. Bump this whenever a llama.cpp change breaks how we
+    // connect.
+    versionRange: '>=11960:1',
     healthCheck: 'primary',
-    keySource: 'placeholder',
+    keySource: 'public',
     keyRequired: false,
   },
   {

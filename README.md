@@ -37,11 +37,11 @@
 
 One prebuilt upstream image, running Python 3.12 on Debian 13.
 
-| Property      | Value                                               |
-| ------------- | --------------------------------------------------- |
-| Image         | `ghcr.io/open-webui/open-webui`                      |
-| Architectures | x86_64, aarch64                                     |
-| Entrypoint    | Upstream's                                          |
+| Property      | Value                           |
+| ------------- | ------------------------------- |
+| Image         | `ghcr.io/open-webui/open-webui` |
+| Architectures | x86_64, aarch64                 |
+| Entrypoint    | Upstream's                      |
 
 | Subcontainer           | Purpose                                                 |
 | ---------------------- | ------------------------------------------------------- |

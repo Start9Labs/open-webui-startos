@@ -4,6 +4,7 @@ import {
   KNOWN_BACKENDS,
   KNOWN_OPENAI,
   publicCredentialsFile,
+  readPublicApiKey,
   ResolvedBaseUrls,
 } from './backends'
 import { storeJson } from './fileModels/store.json'
@@ -40,6 +41,8 @@ import { uiPort as searxngUiPort } from 'searxng-startos/startos/utils'
 export type ManagedContext = {
   /** SearXNG's bridge address (`host:port`), or null when not installed. */
   searxng: string | null
+  /** The key SearXNG publishes for dependents, or null when it publishes none. */
+  searxngKey: string | null
 }
 
 const SEARXNG_PACKAGE_ID = 'searxng'
@@ -63,6 +66,7 @@ export async function resolveManagedContext(
         ssl: false,
       })
       [mode](),
+    searxngKey: await readPublicApiKey(effects, SEARXNG_PACKAGE_ID, mode),
   }
 }
 
@@ -123,8 +127,11 @@ const RECONCILED: Reconciled[] = [
     // that rename keeps an existing `web.` row and drops the `rag.web.` one.
     legacyKeys: ['rag.web.search.searxng_query_url'],
     // `<query>` is Open WebUI's own substitution placeholder.
-    desired: ({ searxng }) =>
-      searxng && `http://${searxng}/search?q=<query>&format=json`,
+    // SearXNG's proxy gate also covers the bridge, so the URL carries its
+    // published key as Basic userinfo, which Open WebUI's client sends.
+    desired: ({ searxng, searxngKey }) =>
+      searxng &&
+      `http://${searxngKey ? `dependent:${encodeURIComponent(searxngKey)}@` : ''}${searxng}/search?q=<query>&format=json`,
     // The bridge host, or the overlay DNS name that doesn't route from here —
     // the two ways of naming this server's own SearXNG.
     aimedAtUs: (stored, desired) => {

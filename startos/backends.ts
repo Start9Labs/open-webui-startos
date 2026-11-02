@@ -205,15 +205,20 @@ export function publicCredentialsFile(packageId: string) {
 }
 
 /**
- * Idempotently bind-mount `<packageId>:public` read-only so we can read the
- * credentials file it publishes. Safe to call on every run — if the mount is
- * already in place the underlying StartOS call is a no-op.
+ * Bind-mount `<packageId>:public` read-only so we can read the credentials
+ * file it publishes. Skipped when the file is already readable: mounting again
+ * unmounts first, pulling the file out from under a `.const()` watcher.
  */
 export async function ensurePublicMounted(
   effects: T.Effects,
   packageId: string,
 ): Promise<void> {
   const mountPoint = publicMountPoint(packageId)
+  const mounted = await fs.access(`${mountPoint}/credentials.json`).then(
+    () => true,
+    () => false,
+  )
+  if (mounted) return
   await fs.mkdir(mountPoint, { recursive: true })
   await effects.mount({
     location: mountPoint,
@@ -234,12 +239,14 @@ export async function ensurePublicMounted(
 export async function readPublicApiKey(
   effects: T.Effects,
   packageId: string,
+  mode: 'const' | 'once' = 'once',
 ): Promise<string | null> {
   try {
     await ensurePublicMounted(effects, packageId)
-    return await publicCredentialsFile(packageId)
-      .read((c) => c.apiKey)
-      .once()
+    const read = publicCredentialsFile(packageId).read((c) => c.apiKey)
+    return (
+      (await (mode === 'const' ? read.const(effects) : read.once())) ?? null
+    )
   } catch {
     return null
   }

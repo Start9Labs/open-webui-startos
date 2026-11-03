@@ -86,7 +86,7 @@ That splits the settings into three groups:
 
 **Seeded once at install** and yours from then on: both backend types start disabled, the OpenAI provider arrays start empty, community sharing is off, and the search engine is set to SearXNG. Upstream defaults both backend types to enabled, which would have Open WebUI dialling backends nobody selected. The empty arrays matter for a subtler reason: with no OpenAI base URL in the environment, upstream substitutes its own hosted endpoint and stores that, which would then show up as a pre-filled provider on every fresh install.
 
-**Reconciled on every start** — currently the SearXNG web-search endpoint. Its correct value changes under you when SearXNG is installed, or when its assigned bridge port moves, so the package re-asserts it. **A value you have changed by hand is never overwritten**; instead the package raises a task rather than fighting you for the key.
+**Reconciled on every start** — currently the SearXNG web-search endpoint. Its correct value changes under you when SearXNG is installed, when its assigned bridge port moves, or when SearXNG rotates the key it publishes for dependents, so the package re-asserts it. That key rides in the URL as Basic credentials (`dependent:<key>@`), because SearXNG's password gate also covers the internal address. **A value you have changed by hand is never overwritten**; instead the package raises a task rather than fighting you for the key.
 
 ## Dependencies
 
@@ -193,7 +193,7 @@ The two minutes of grace covers the model load. A failure after that is the app 
 
 ## Backups and Restore
 
-Both volumes are copied wholesale — `sdk.Backups.ofVolumes('open-webui', 'startos')`. No dump step and nothing excluded.
+Both volumes are copied — `sdk.Backups.ofVolumes('open-webui', 'startos')` — except the `<package>-public` directories under `startos`, where other services' published credentials are mounted. No dump step.
 
 - **Included:** `webui.db` with every account, chat, and setting; uploaded documents and the vector store; the model cache; and `store.json` with the session secret and the ownership records.
 - **Size:** the model cache alone is a few hundred megabytes, and grows with each model Open WebUI downloads.

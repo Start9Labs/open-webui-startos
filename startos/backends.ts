@@ -218,6 +218,8 @@ export async function ensurePublicMounted(
     () => false,
   )
   if (mounted) return
+  if (!(await effects.getInstalledPackages()).includes(packageId))
+    throw new Error(`${packageId} is not installed`)
   await fs.mkdir(mountPoint, { recursive: true })
   await effects.mount({
     location: mountPoint,

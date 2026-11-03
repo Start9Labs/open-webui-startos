@@ -22,7 +22,7 @@ Fixes chats with llama.cpp on this server, which failed with an authentication e
 - Añade un espacio de trabajo con pestañas, chats secundarios, hilos de comentarios opcionales, una bandeja de notificaciones y aplicaciones MCP interactivas en el chat.
 - Añade subagentes con distintos modelos, límites de archivos en bases de conocimiento y correcciones para la transmisión de chats y los ajustes OAuth guardados.
 
-Haz una copia de seguridad antes de actualizar: Open WebUI migra la base de datos en el primer arranque para añadir comentarios, notificaciones e interruptores de herramientas. Deja más tiempo para ese primer arranque. Los controles del chat ahora están en el menú del modelo junto al campo de mensaje. Los subagentes no tienen límites por defecto y el límite de llamadas a herramientas sube a 1024; revisa esos ajustes si usas flujos con agentes. Se eliminan las alertas por webhook de fallos en el procesamiento de archivos.
+Haga una copia de seguridad antes de actualizar: Open WebUI migra la base de datos en el primer arranque para añadir comentarios, notificaciones e interruptores de herramientas. Deje más tiempo para ese primer arranque. Los controles del chat ahora están en el menú del modelo junto al campo de mensaje. Los subagentes no tienen límites por defecto y el límite de llamadas a herramientas sube a 1024; revise esos ajustes si usa flujos con agentes. Se eliminan las alertas por webhook de fallos en el procesamiento de archivos.
 
 [Notas completas de la versión original](https://github.com/open-webui/open-webui/releases/tag/v0.13.0)
 
@@ -35,7 +35,7 @@ Corrige los chats con llama.cpp en este servidor, que fallaban con un error de a
 - Ergänzt einen Arbeitsbereich mit Tabs, Neben-Chats, optionale Kommentar-Threads, einen Benachrichtigungseingang und interaktive MCP-Apps im Chat.
 - Ergänzt Unteragenten mit verschiedenen Modellen, Dateilimits für Wissensdatenbanken sowie Korrekturen für Chat-Streaming und gespeicherte OAuth-Einstellungen.
 
-Vor dem Update eine Sicherung erstellen: Open WebUI migriert die Datenbank beim ersten Start für Kommentare, Benachrichtigungen und Ein-/Aus-Schalter für Tools. Plane für diesen ersten Start mehr Zeit ein. Die Chat-Steuerung liegt nun im Modellmenü neben dem Nachrichtenfeld. Unteragenten sind standardmäßig unbegrenzt und das Tool-Aufruflimit steigt auf 1024; prüfe diese Einstellungen bei Agenten-Workflows. Webhook-Meldungen bei fehlgeschlagener Dateiverarbeitung entfallen.
+Erstellen Sie vor dem Update eine Sicherung: Open WebUI migriert die Datenbank beim ersten Start für Kommentare, Benachrichtigungen und Ein-/Aus-Schalter für Tools. Planen Sie für diesen ersten Start mehr Zeit ein. Die Chat-Steuerung liegt nun im Modellmenü neben dem Nachrichtenfeld. Unteragenten sind standardmäßig unbegrenzt und das Tool-Aufruflimit steigt auf 1024; prüfen Sie diese Einstellungen bei Agenten-Workflows. Webhook-Meldungen bei fehlgeschlagener Dateiverarbeitung entfallen.
 
 [Vollständige Versionshinweise des Ursprungsprojekts](https://github.com/open-webui/open-webui/releases/tag/v0.13.0)
 
@@ -61,7 +61,7 @@ Naprawia czaty z llama.cpp na tym serwerze, które w StartOS 0.4.1 kończyły si
 - Ajoute un espace de travail à onglets, des conversations secondaires, des fils de commentaires facultatifs, une boîte de notifications et des applications MCP interactives dans le chat.
 - Ajoute des sous-agents utilisant différents modèles, des limites de fichiers dans les bases de connaissances et des correctifs pour la diffusion des réponses et les réglages OAuth enregistrés.
 
-Sauvegardez avant la mise à jour : Open WebUI migre la base de données au premier démarrage pour ajouter les commentaires, les notifications et les interrupteurs d'outils. Prévoyez davantage de temps pour ce premier démarrage. Les contrôles du chat se trouvent désormais dans le menu du modèle près du champ de message. Les sous-agents sont illimités par défaut et la limite d'appels d'outils passe à 1024 ; vérifiez ces réglages si vous utilisez des agents. Les alertes webhook d'échec du traitement des fichiers sont supprimées.
+Sauvegardez avant la mise à jour : Open WebUI migre la base de données au premier démarrage pour ajouter les commentaires, les notifications et les interrupteurs d’outils. Prévoyez davantage de temps pour ce premier démarrage. Les contrôles du chat se trouvent désormais dans le menu du modèle près du champ de message. Les sous-agents sont illimités par défaut et la limite d’appels d’outils passe à 1024 ; vérifiez ces réglages si vous utilisez des agents. Les alertes webhook d’échec du traitement des fichiers sont supprimées.
 
 [Notes de version complètes du projet en amont](https://github.com/open-webui/open-webui/releases/tag/v0.13.0)
 

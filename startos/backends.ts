@@ -113,7 +113,7 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     versionRange: '>=11960:1',
     healthCheck: 'primary',
     keySource: 'public',
-    keyRequired: false,
+    keyRequired: true,
   },
   {
     id: 'maple-proxy',

@@ -20,7 +20,7 @@ const dict = {
   'API Key': 20,
   'API key for this provider. Leave blank if the backend does not require authentication.': 21,
   'Connect detected services': 24,
-  "AI backends installed on this server. Checking one connects Open WebUI to it and fills in its address; unchecking one disconnects it.\n- Ollama: local models, through Ollama's own API\n- vLLM: through its OpenAI-compatible API, with the API key vLLM publishes\n- llama.cpp: through its OpenAI-compatible API; no API key is needed\n- Maple Proxy: through its OpenAI-compatible API, with a placeholder key. It works when your Maple API key is saved in Maple Proxy; otherwise replace it with your key in Open WebUI's admin settings, under Connections\nCreate your admin account in the Web UI before running this.": 25,
+  "AI backends installed on this server. Checking one connects Open WebUI to it and fills in its address; unchecking one disconnects it.\n- Ollama: local models, through Ollama's own API\n- vLLM: through its OpenAI-compatible API, with the API key vLLM publishes\n- llama.cpp: through its OpenAI-compatible API, with the API key llama.cpp publishes\n- Maple Proxy: through its OpenAI-compatible API, with a placeholder key. It works when your Maple API key is saved in Maple Proxy; otherwise replace it with your key in Open WebUI's admin settings, under Connections\nCreate your admin account in the Web UI before running this.": 25,
   'OpenAI-compatible': 26,
   'local models': 27,
   "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before configuring backends.": 28,

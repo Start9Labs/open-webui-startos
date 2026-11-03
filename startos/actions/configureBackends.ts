@@ -59,7 +59,7 @@ const inputSpec = InputSpec.of({
     return {
       name: i18n('Connect detected services'),
       description: i18n(
-        "AI backends installed on this server. Checking one connects Open WebUI to it and fills in its address; unchecking one disconnects it.\n- Ollama: local models, through Ollama's own API\n- vLLM: through its OpenAI-compatible API, with the API key vLLM publishes\n- llama.cpp: through its OpenAI-compatible API; no API key is needed\n- Maple Proxy: through its OpenAI-compatible API, with a placeholder key. It works when your Maple API key is saved in Maple Proxy; otherwise replace it with your key in Open WebUI's admin settings, under Connections\nCreate your admin account in the Web UI before running this.",
+        "AI backends installed on this server. Checking one connects Open WebUI to it and fills in its address; unchecking one disconnects it.\n- Ollama: local models, through Ollama's own API\n- vLLM: through its OpenAI-compatible API, with the API key vLLM publishes\n- llama.cpp: through its OpenAI-compatible API, with the API key llama.cpp publishes\n- Maple Proxy: through its OpenAI-compatible API, with a placeholder key. It works when your Maple API key is saved in Maple Proxy; otherwise replace it with your key in Open WebUI's admin settings, under Connections\nCreate your admin account in the Web UI before running this.",
       ),
       values,
       // dynamicMultiselect requires every default to be a key in values.
@@ -86,8 +86,8 @@ const inputSpec = InputSpec.of({
 
 /**
  * Resolve the API key to store for a selected OpenAI backend. For `public`
- * backends we read the key the dependency publishes (throwing for vLLM, which
- * requires it; falling back gracefully for llama.cpp). For `placeholder`
+ * backends we read the key the dependency publishes, and throw when it can't be
+ * read: the dependency's gate refuses a placeholder. For `placeholder`
  * backends we keep any key the user already set, else seed a non-empty
  * placeholder (Open WebUI rejects an empty key field).
  */

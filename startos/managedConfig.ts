@@ -211,7 +211,7 @@ export async function syncBackendState(
 ): Promise<void> {
   // `.once()` on each key is a snapshot, not a subscription: setupMain re-reads
   // on every start, so a rotated key is picked up on the next restart without
-  // main restarting on every rotation. (vLLM is the only such backend today.)
+  // main restarting on every rotation. (vLLM and llama.cpp publish keys.)
   const view = await webuiConfig.read(effects, resolved).once()
   const urls = [...view.openaiBaseUrls]
   const keys = [...view.openaiApiKeys]
@@ -225,9 +225,11 @@ export async function syncBackendState(
   let changed = false
   for (const b of KNOWN_OPENAI) {
     if (b.keySource !== 'public') continue
-    if (!view.connectedIds.includes(b.id)) continue
     const bUrl = resolved[b.id]
     if (!bUrl) continue
+    // Look the backend up in `urls` as repointed, not in `view.connectedIds`:
+    // that was taken before the repoint, so a backend whose address moved on
+    // this start would keep its old key until the next one.
     const idx = urls.indexOf(bUrl)
     if (idx < 0) continue
     let freshKey: string | null = null

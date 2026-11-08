@@ -9,6 +9,8 @@ export const current = VersionInfo.of({
 - Speeds up large chats and channels, reduces tool-chat costs through better prompt caching, and adds resizable split panes with layouts remembered per chat.
 - Fixes chats and comments failing over plain HTTP, interrupted Ollama tool calls, and tool approvals in side chats.
 
+New Memory Settings action: turn on background memory review, set how often it runs, and set how much memory goes into each chat.
+
 Back up Open WebUI before updating: upstream adds database tables and channel indexes on first start. Allow extra time for that start.
 
 Attached files are no longer preloaded by default with native function calling. For models without file tools, enable **Preload files** in the model's **Capabilities**. Small files are included in full when read, with a default threshold of 50,000 characters. Retrieval defaults increase to 10 results and 1,024-character chunks unless you saved your own values; existing documents keep their chunks until reindexed.
@@ -21,6 +23,8 @@ Side chats are saved unless Temporary Chat is enabled. With native function call
 - Incluye correcciones de seguridad; el proyecto original recomienda encarecidamente actualizar.
 - Acelera los chats grandes y los canales, reduce el coste de las conversaciones con herramientas mediante una mejor caché de instrucciones y añade paneles divididos redimensionables cuya distribución se recuerda por chat.
 - Corrige los fallos de chats y comentarios a través de HTTP sin cifrar, las llamadas a herramientas de Ollama interrumpidas y las aprobaciones de herramientas en chats laterales.
+
+Nueva acción Ajustes de memoria: activa la revisión de memoria en segundo plano, elige cada cuánto se ejecuta y cuánta memoria entra en cada chat.
 
 Haz una copia de seguridad de Open WebUI antes de actualizar: el proyecto original añade tablas e índices de canales a la base de datos en el primer arranque. Deja más tiempo para ese arranque.
 
@@ -35,6 +39,8 @@ Los chats laterales se guardan salvo que esté activado el chat temporal. Con ll
 - Beschleunigt große Chats und Kanäle, senkt durch verbessertes Prompt-Caching die Kosten für Chats mit Tools und ergänzt größenverstellbare geteilte Ansichten, deren Anordnung pro Chat gespeichert wird.
 - Behebt Fehler bei Chats und Kommentaren über unverschlüsseltes HTTP, unterbrochene Ollama-Tool-Aufrufe und Tool-Freigaben in Seitenchats.
 
+Neue Aktion Gedächtnis-Einstellungen: Gedächtnisprüfung im Hintergrund einschalten, festlegen, wie oft sie läuft und wie viel Erinnerung in jeden Chat einfließt.
+
 Vor dem Update Open WebUI sichern: Beim ersten Start ergänzt das Ursprungsprojekt Datenbanktabellen und Kanalindizes. Für diesen Start mehr Zeit einplanen.
 
 Angehängte Dateien werden bei nativen Funktionsaufrufen standardmäßig nicht mehr vorgeladen. Für Modelle ohne Datei-Tools **Dateien vorladen** unter den **Fähigkeiten** des Modells aktivieren. Kleine Dateien werden beim Lesen vollständig eingebunden; der Standardschwellenwert beträgt 50.000 Zeichen. Die Abrufstandardwerte steigen auf 10 Ergebnisse und Abschnitte mit 1.024 Zeichen, sofern keine eigenen Werte gespeichert sind; bestehende Dokumente behalten ihre Abschnitte bis zur Neuindizierung.
@@ -48,6 +54,8 @@ Seitenchats werden gespeichert, sofern temporäre Chats nicht aktiviert sind. Be
 - Przyspiesza duże czaty i kanały, obniża koszty rozmów z narzędziami dzięki lepszemu buforowaniu promptów i dodaje panele o zmiennym rozmiarze z układem zapamiętywanym dla każdego czatu.
 - Naprawia błędy czatów i komentarzy przez nieszyfrowany HTTP, przerywane wywołania narzędzi Ollama i zatwierdzanie narzędzi w czatach bocznych.
 
+Nowa akcja Ustawienia pamięci: włącz przegląd pamięci w tle, ustaw, jak często ma działać i ile pamięci trafia do każdego czatu.
+
 Przed aktualizacją wykonaj kopię zapasową Open WebUI: przy pierwszym uruchomieniu aplikacja dodaje tabele bazy danych i indeksy kanałów. Zarezerwuj więcej czasu na to uruchomienie.
 
 Załączniki nie są już domyślnie wczytywane z wyprzedzeniem przy natywnym wywoływaniu funkcji. Dla modeli bez narzędzi plikowych włącz **Wstępne wczytywanie plików** w **Możliwościach** modelu. Małe pliki są odczytywane w całości, z domyślnym progiem 50 000 znaków. Domyślne wartości wyszukiwania rosną do 10 wyników i fragmentów po 1024 znaki, chyba że zapisano własne wartości; istniejące dokumenty zachowują fragmenty do ponownego indeksowania.
@@ -60,6 +68,8 @@ Czaty boczne są zapisywane, chyba że włączono czat tymczasowy. Przy natywnym
 - Inclut des correctifs de sécurité ; le projet en amont recommande vivement la mise à jour.
 - Accélère les grandes conversations et les canaux, réduit le coût des conversations avec outils grâce à une meilleure mise en cache des instructions et ajoute des volets redimensionnables dont la disposition est mémorisée par conversation.
 - Corrige les échecs des conversations et commentaires en HTTP non chiffré, les appels d'outils Ollama interrompus et les autorisations d'outils dans les conversations latérales.
+
+Nouvelle action Paramètres de mémoire : activez la révision de la mémoire en arrière-plan, choisissez sa fréquence et la quantité de mémoire ajoutée à chaque chat.
 
 Sauvegardez Open WebUI avant la mise à jour : au premier démarrage, le projet en amont ajoute des tables de base de données et des index de canaux. Prévoyez davantage de temps pour ce démarrage.
 

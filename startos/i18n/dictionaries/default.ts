@@ -43,6 +43,20 @@ const dict = {
   'Create the first admin account in the Web UI before recovering two-factor authentication.': 45,
   'Sign in with your password, use this one-time recovery token when prompted, and enroll a new authenticator. The token expires in 30 minutes. If you also need to reset your password, do that first: resetting it invalidates this token.': 46,
   'Start Open WebUI once after updating before using account recovery.': 47,
+  'Background memory review': 48,
+  'Every few messages, Open WebUI asks the chat model to review the conversation and add, update or remove your memories by itself. Each review is an extra request to the model, which takes time on a local model and costs money on a paid API. It only runs while Memory is turned on in Open WebUI.': 49,
+  'Review interval': 50,
+  'How many of your messages pass between background reviews. Lower means memories update sooner, with more extra requests to the model.': 51,
+  messages: 52,
+  'Memory about you': 53,
+  'The most text from memories about you (facts, preferences, instructions) added to each chat. Anything beyond it is left out. A higher limit uses more of the model context.': 54,
+  characters: 55,
+  'Related memory': 56,
+  'The most text from other memories related to the conversation added to each chat. Anything beyond it is left out. A higher limit uses more of the model context.': 57,
+  'Memory Settings': 58,
+  'Tune how Open WebUI remembers things about you between chats: whether the model updates memories by itself, how often, and how much memory goes into each chat.': 59,
+  "Open WebUI hasn't been set up yet. Start the service, open the Web UI, and register the first account (which becomes the admin) before changing memory settings.": 60,
+  'Memory settings saved. They apply to the next chat message, with no restart.': 61,
 } as const
 
 export type I18nKey = keyof typeof dict

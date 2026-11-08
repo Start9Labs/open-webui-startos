@@ -126,7 +126,7 @@ No credential is shown. **The first account created in the web UI becomes the ad
 
 ## Actions
 
-Four actions, all available whether or not the service is running.
+Five actions, all available whether or not the service is running.
 
 ### Configure Backends
 
@@ -146,6 +146,16 @@ Points web search back at SearXNG and resumes maintaining the address.
 - **What it changes:** the search endpoint in `webui.db`, and the ownership record that makes the package own it again.
 - **Cost:** seconds, then a restart.
 - **Repeat safety:** idempotent, and it touches nothing else.
+
+### Memory Settings
+
+Sets Open WebUI's memory tuning, which upstream seeds from environment variables into `webui.db` and has no admin UI field for: background review on or off (`memories.background_review.enable`, default off), the review interval in user messages (`memories.review_interval_turns`, default 10), and how many characters of memory go into each chat, for memories about the user (`memories.user_char_limit`) and for related context (`memories.context_char_limit`), both default 2000.
+
+- **What background review does:** every N user messages, Open WebUI sends the last ~16 messages and the user's existing memories to the same chat model and applies the add/replace/move/remove operations it returns. Those memories carry `"created_by": "background_review"` in the memory row's `meta`. It is an extra model call per review, and it only runs while Memory is on both server-wide (`memories.enable`) and in the user's own settings (sent as `features.memory` with each chat).
+- **What it changes:** those four keys in `webui.db`, nothing else. The form prefills from the database, so it always shows what is in effect.
+- **Cost:** seconds, no restart. Upstream reads these keys from the database on every chat request.
+- **Limits:** both character limits have a floor of 250 (upstream raises a lower value to 250), so the form refuses less. Text past a limit is dropped without notice, and a higher limit uses more of a small model's context.
+- **Repeat safety:** idempotent.
 
 ### Reset Admin Password
 
@@ -245,6 +255,7 @@ interfaces:
 actions:
   - configure-backends
   - reconnect-searxng
+  - memory-settings
   - reset-password
   - reset-admin-mfa
 tasks:

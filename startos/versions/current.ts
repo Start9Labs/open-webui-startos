@@ -1,9 +1,12 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '0.13.2:0',
+  version: '0.13.3:0',
   releaseNotes: {
-    en_US: `Updated Open WebUI to 0.13.2.
+    en_US: `Updated Open WebUI to 0.13.3.
+
+- Adds coding agents to scheduled automations and lets you change terminals and working folders during a chat.
+- Fixes copy buttons over plain HTTP, DeepSeek thinking with knowledge and memories through llama.cpp, and knowledge searches containing punctuation.
 
 - Includes security fixes; upstream strongly recommends updating.
 - Speeds up large chats and channels, reduces tool-chat costs through better prompt caching, and adds resizable split panes with layouts remembered per chat.
@@ -17,8 +20,11 @@ Attached files are no longer preloaded by default with native function calling. 
 
 Side chats are saved unless Temporary Chat is enabled. With native function calling, custom pipes must handle memory and knowledge context arriving as hidden tool results, which can make a tool message the last message.
 
-[Upstream 0.13.1 release notes](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Upstream 0.13.2 release notes](https://github.com/open-webui/open-webui/releases/tag/v0.13.2)`,
-    es_ES: `Se ha actualizado Open WebUI a 0.13.2.
+[Upstream 0.13.1 release notes](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Upstream 0.13.2 release notes](https://github.com/open-webui/open-webui/releases/tag/v0.13.2) · [Upstream 0.13.3 release notes](https://github.com/open-webui/open-webui/releases/tag/v0.13.3)`,
+    es_ES: `Se ha actualizado Open WebUI a 0.13.3.
+
+- Añade agentes de programación a las automatizaciones programadas y permite cambiar de terminal y carpeta de trabajo durante un chat.
+- Corrige los botones de copia por HTTP sin cifrar, el modo de razonamiento de DeepSeek con conocimiento y memoria a través de llama.cpp y las búsquedas de conocimiento con signos de puntuación.
 
 - Incluye correcciones de seguridad; el proyecto original recomienda encarecidamente actualizar.
 - Acelera los chats grandes y los canales, reduce el coste de las conversaciones con herramientas mediante una mejor caché de instrucciones y añade paneles divididos redimensionables cuya distribución se recuerda por chat.
@@ -32,8 +38,11 @@ Los archivos adjuntos ya no se precargan por defecto con llamadas nativas a func
 
 Los chats laterales se guardan salvo que esté activado el chat temporal. Con llamadas nativas a funciones, las canalizaciones personalizadas deben admitir que el contexto de memoria y conocimiento llegue como resultados ocultos de herramientas, por lo que el último mensaje puede ser de una herramienta.
 
-[Notas de la versión original 0.13.1](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Notas de la versión original 0.13.2](https://github.com/open-webui/open-webui/releases/tag/v0.13.2)`,
-    de_DE: `Open WebUI wurde auf 0.13.2 aktualisiert.
+[Notas de la versión original 0.13.1](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Notas de la versión original 0.13.2](https://github.com/open-webui/open-webui/releases/tag/v0.13.2) · [Notas de la versión original 0.13.3](https://github.com/open-webui/open-webui/releases/tag/v0.13.3)`,
+    de_DE: `Open WebUI wurde auf 0.13.3 aktualisiert.
+
+- Ergänzt Programmieragenten in geplanten Automatisierungen und erlaubt den Wechsel von Terminal und Arbeitsordner während eines Chats.
+- Behebt Kopierschaltflächen über unverschlüsseltes HTTP, den DeepSeek-Denkmodus mit Wissen und Erinnerungen über llama.cpp sowie Wissenssuchen mit Satzzeichen.
 
 - Enthält Sicherheitskorrekturen; das Ursprungsprojekt empfiehlt dringend ein Update.
 - Beschleunigt große Chats und Kanäle, senkt durch verbessertes Prompt-Caching die Kosten für Chats mit Tools und ergänzt größenverstellbare geteilte Ansichten, deren Anordnung pro Chat gespeichert wird.
@@ -47,8 +56,11 @@ Angehängte Dateien werden bei nativen Funktionsaufrufen standardmäßig nicht m
 
 Seitenchats werden gespeichert, sofern temporäre Chats nicht aktiviert sind. Bei nativen Funktionsaufrufen müssen eigene Pipes Speicher- und Wissenskontext als verborgene Tool-Ergebnisse verarbeiten können; dadurch kann die letzte Nachricht eine Tool-Nachricht sein.
 
-[Versionshinweise des Ursprungsprojekts 0.13.1](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Versionshinweise des Ursprungsprojekts 0.13.2](https://github.com/open-webui/open-webui/releases/tag/v0.13.2)`,
-    pl_PL: `Zaktualizowano Open WebUI do 0.13.2.
+[Versionshinweise des Ursprungsprojekts 0.13.1](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Versionshinweise des Ursprungsprojekts 0.13.2](https://github.com/open-webui/open-webui/releases/tag/v0.13.2) · [Versionshinweise des Ursprungsprojekts 0.13.3](https://github.com/open-webui/open-webui/releases/tag/v0.13.3)`,
+    pl_PL: `Zaktualizowano Open WebUI do 0.13.3.
+
+- Dodaje agentów programistycznych do zaplanowanych automatyzacji i pozwala zmieniać terminal oraz katalog roboczy podczas czatu.
+- Naprawia przyciski kopiowania przez nieszyfrowany HTTP, tryb rozumowania DeepSeek z wiedzą i pamięcią przez llama.cpp oraz wyszukiwanie wiedzy ze znakami interpunkcyjnymi.
 
 - Zawiera poprawki bezpieczeństwa; autorzy zdecydowanie zalecają aktualizację.
 - Przyspiesza duże czaty i kanały, obniża koszty rozmów z narzędziami dzięki lepszemu buforowaniu promptów i dodaje panele o zmiennym rozmiarze z układem zapamiętywanym dla każdego czatu.
@@ -62,8 +74,11 @@ Załączniki nie są już domyślnie wczytywane z wyprzedzeniem przy natywnym wy
 
 Czaty boczne są zapisywane, chyba że włączono czat tymczasowy. Przy natywnym wywoływaniu funkcji własne potoki muszą obsługiwać kontekst pamięci i wiedzy jako ukryte wyniki narzędzi, przez co ostatnią wiadomością może być wiadomość narzędzia.
 
-[Informacje o wydaniu projektu źródłowego 0.13.1](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Informacje o wydaniu projektu źródłowego 0.13.2](https://github.com/open-webui/open-webui/releases/tag/v0.13.2)`,
-    fr_FR: `Open WebUI a été mis à jour vers 0.13.2.
+[Informacje o wydaniu projektu źródłowego 0.13.1](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Informacje o wydaniu projektu źródłowego 0.13.2](https://github.com/open-webui/open-webui/releases/tag/v0.13.2) · [Informacje o wydaniu projektu źródłowego 0.13.3](https://github.com/open-webui/open-webui/releases/tag/v0.13.3)`,
+    fr_FR: `Open WebUI a été mis à jour vers 0.13.3.
+
+- Ajoute les agents de programmation aux automatisations planifiées et permet de changer de terminal et de dossier de travail pendant une conversation.
+- Corrige les boutons de copie en HTTP non chiffré, le mode de raisonnement DeepSeek avec les connaissances et les souvenirs via llama.cpp, ainsi que les recherches de connaissances contenant de la ponctuation.
 
 - Inclut des correctifs de sécurité ; le projet en amont recommande vivement la mise à jour.
 - Accélère les grandes conversations et les canaux, réduit le coût des conversations avec outils grâce à une meilleure mise en cache des instructions et ajoute des volets redimensionnables dont la disposition est mémorisée par conversation.
@@ -77,7 +92,7 @@ Les fichiers joints ne sont plus préchargés par défaut avec les appels de fon
 
 Les conversations latérales sont enregistrées sauf si le mode temporaire est activé. Avec les appels de fonctions natifs, les pipelines personnalisés doivent accepter le contexte de mémoire et de connaissances sous forme de résultats d'outils masqués : le dernier message peut donc être un message d'outil.
 
-[Notes de version en amont 0.13.1](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Notes de version en amont 0.13.2](https://github.com/open-webui/open-webui/releases/tag/v0.13.2)`,
+[Notes de version en amont 0.13.1](https://github.com/open-webui/open-webui/releases/tag/v0.13.1) · [Notes de version en amont 0.13.2](https://github.com/open-webui/open-webui/releases/tag/v0.13.2) · [Notes de version en amont 0.13.3](https://github.com/open-webui/open-webui/releases/tag/v0.13.3)`,
   },
   migrations: {
     up: async ({ effects }) => {},

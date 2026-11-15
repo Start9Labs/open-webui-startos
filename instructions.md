@@ -7,7 +7,7 @@
 ## What you get on StartOS
 
 - A **Web UI** interface for chatting with large language models, managing conversations, uploading documents for RAG, and administering users.
-- Pluggable LLM backends: Open WebUI **auto-detects** compatible StartOS AI services installed alongside it — [Ollama](https://github.com/Start9Labs/ollama-startos), [vLLM](https://github.com/Start9Labs/vllm-startos), [llama.cpp](https://github.com/Start9Labs/llama-cpp-startos), and [Maple Proxy](https://github.com/Start9-Community/maple-proxy-startos) — and wires them up from the **Configure Backends** action, plus any number of external OpenAI-compatible endpoints you add yourself (OpenAI, OpenRouter, etc.).
+- Pluggable LLM backends: Open WebUI **auto-detects** compatible StartOS AI services installed alongside it — [Ollama](https://github.com/Start9Labs/ollama-startos), [vLLM](https://github.com/Start9Labs/vllm-startos), [llama.cpp](https://github.com/Start9Labs/llama-cpp-startos), [Strata](https://github.com/Start9-Community/strata-startos), and [Maple Proxy](https://github.com/Start9-Community/maple-proxy-startos) — and wires them up from the **Configure Backends** action, plus any number of external OpenAI-compatible endpoints you add yourself (OpenAI, OpenRouter, etc.).
 - Optional self-hosted web search via [SearXNG](https://github.com/Start9Labs/searxng-startos), wired up for you so Open WebUI's web-search toggle works without entering a URL — whichever of the two you installed first.
 - An admin password reset action so you can recover the first admin account if you lose the credentials.
 
@@ -15,10 +15,10 @@
 
 Installing takes a few minutes: StartOS starts Open WebUI once during install so it can create its database and be configured before you ever open it. The progress bar shows this as **Copying bundled models**, then **Preparing the database and models**.
 
-1. Decide which LLM backends you want, and install the local ones first. Open WebUI auto-detects these StartOS AI services and connects to them for you — **Ollama** (local models), **vLLM**, **llama.cpp**, and **Maple Proxy** (all OpenAI-compatible). For external providers (OpenAI, OpenRouter, etc.) nothing extra is needed.
+1. Decide which LLM backends you want, and install the local ones first. Open WebUI auto-detects these StartOS AI services and connects to them for you — **Ollama** (local models), **vLLM**, **llama.cpp**, **Strata**, and **Maple Proxy** (all OpenAI-compatible). Strata publishes its API key only after you run its **API Key** action, so run that first. For external providers (OpenAI, OpenRouter, etc.) nothing extra is needed.
 2. **Start Open WebUI, open the Web UI interface, and register the first account — whoever registers first becomes the admin. Do this _before_ running Configure Backends: the action refuses to run until an admin exists, because writing backend config before then corrupts the database.**
 3. Run the **Configure Backends** action:
-   - Under **Connect detected services**, check the StartOS AI services you want to use. Their internal URL is filled in automatically, along with the API key wherever Open WebUI can read it (Ollama needs none over the internal network; vLLM and llama.cpp publish theirs). Maple Proxy gets a placeholder key, which works when your Maple API key is saved in Maple Proxy; otherwise replace it with your key in Open WebUI's admin settings, under **Connections**.
+   - Under **Connect detected services**, check the StartOS AI services you want to use. Their internal URL is filled in automatically, along with the API key wherever Open WebUI can read it (Ollama needs none over the internal network; vLLM, llama.cpp, and Strata publish theirs). Maple Proxy gets a placeholder key, which works when your Maple API key is saved in Maple Proxy; otherwise replace it with your key in Open WebUI's admin settings, under **Connections**.
    - Under **OpenAI-Compatible Providers**, add a row for each external endpoint: a base URL (e.g. `https://api.openai.com/v1`) and an optional API key.
 4. (Optional) To enable web search, install **SearXNG**, then in Open WebUI open **Settings → Web Search** (under the **Admin** section) and turn web search on. The engine and query URL are filled in for you.
 

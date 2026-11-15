@@ -90,13 +90,14 @@ That splits the settings into three groups:
 
 ## Dependencies
 
-Five optional packages, and **which ones are declared follows what is actually wired up** rather than what is installed.
+Six optional packages, and **which ones are declared follows what is actually wired up** rather than what is installed.
 
 | Dependency    | Role                                                   |
 | ------------- | ------------------------------------------------------ |
 | `ollama`      | Local LLMs over Ollama's native API                    |
 | `vllm`        | Local LLMs over an OpenAI-compatible API               |
 | `llama-cpp`   | Local GGUF models over an OpenAI-compatible API        |
+| `strata`      | A local model on an NVIDIA GPU, OpenAI-compatible API  |
 | `maple-proxy` | Maple's privacy-preserving OpenAI-compatible inference |
 | `searxng`     | A self-hosted web-search backend                       |
 
@@ -135,7 +136,7 @@ Selects which LLM backends Open WebUI connects to — the installed StartOS ones
 - **What it changes:** the backend URL and key arrays in `webui.db`, the enable flags derived from them, the package's dependencies, and the ownership records in `store.json`.
 - **Cost:** seconds, then a restart.
 - **Repeat safety:** idempotent. Deselecting a backend removes this package's entry for it; providers you added yourself are left alone.
-- **Keys are handled per backend.** Some publish a credential the package can read; others get a non-empty placeholder, because Open WebUI rejects an empty key field — replace it if the provider needs a real one.
+- **Keys are handled per backend.** Some publish a credential the package can read; others get a non-empty placeholder, because Open WebUI rejects an empty key field — replace it if the provider needs a real one. A backend that publishes its key but hasn't generated one yet (Strata, before its **API Key** action runs) fails the action with a message naming that action, rather than being connected with an empty key.
 
 ### Reconnect SearXNG
 
@@ -248,6 +249,7 @@ dependencies: # all optional; a backend is declared only while selected in Confi
   - ollama
   - vllm
   - llama-cpp
+  - strata
   - maple-proxy
   - searxng
 interfaces:

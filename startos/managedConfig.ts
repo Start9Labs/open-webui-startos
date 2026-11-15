@@ -245,7 +245,8 @@ export async function syncBackendState(
       throw new Error(
         `${b.title} backend is enabled but its API key could not be read ` +
           `from ${b.id}:public/credentials.json. Make sure ${b.title} is ` +
-          `installed, running, and at version ${b.versionRange} or newer.`,
+          `installed, running, and at version ${b.versionRange} or newer, and ` +
+          `run its API Key action if it has one.`,
       )
     }
     if (freshKey && keys[idx] !== freshKey) {

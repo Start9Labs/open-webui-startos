@@ -42,6 +42,19 @@ const depLlamaCppDescription = {
     "Optionnel : servez des modèles GGUF locaux via l'API compatible OpenAI de llama.cpp. Connectez-le via l'action Configurer les backends.",
 }
 
+const depStrataDescription = {
+  en_US:
+    "Optional: serve a local model on an NVIDIA GPU through Strata's OpenAI-compatible API. Connect it via the Configure Backends action.",
+  es_ES:
+    'Opcional: sirve un modelo local en una GPU NVIDIA a través de la API compatible con OpenAI de Strata. Conéctalo mediante la acción Configurar Backends.',
+  de_DE:
+    'Optional: ein lokales Modell auf einer NVIDIA-GPU über die OpenAI-kompatible API von Strata bereitstellen. Über die Aktion „Backends konfigurieren“ verbinden.',
+  pl_PL:
+    'Opcjonalnie: serwuj lokalny model na karcie NVIDIA przez API zgodne z OpenAI ze Strata. Połącz w akcji Konfiguruj backendy.',
+  fr_FR:
+    "Optionnel : servez un modèle local sur un GPU NVIDIA via l'API compatible OpenAI de Strata. Connectez-le via l'action Configurer les backends.",
+}
+
 const depMapleProxyDescription = {
   en_US:
     "Optional: connect to Maple's privacy-preserving, OpenAI-compatible inference through the Maple Proxy package. Connect it via the Configure Backends action.",
@@ -112,6 +125,13 @@ export const dependencies = sdk.Dependencies.of()
       'llama-cpp',
       depLlamaCppDescription,
       'https://raw.githubusercontent.com/Start9Labs/llama-cpp-startos/master/icon.png',
+    ),
+  )
+  .addDependency(
+    backend(
+      'strata',
+      depStrataDescription,
+      'https://raw.githubusercontent.com/Start9-Community/strata-startos/master/icon.svg',
     ),
   )
   .addDependency(

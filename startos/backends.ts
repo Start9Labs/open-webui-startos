@@ -14,6 +14,10 @@ import {
   apiPort as llamaCppPort,
 } from 'llama-cpp-startos/startos/utils'
 import {
+  apiHostId as strataHostId,
+  apiPort as strataPort,
+} from 'strata-startos/startos/utils'
+import {
   apiHostId as mapleHostId,
   apiPort as maplePort,
 } from 'maple-proxy-startos/startos/utils'
@@ -111,6 +115,20 @@ export const KNOWN_BACKENDS: KnownBackend[] = [
     // published key. Bump this whenever a llama.cpp change breaks how we
     // connect.
     versionRange: '>=11960:1',
+    healthCheck: 'primary',
+    keySource: 'public',
+    keyRequired: true,
+  },
+  {
+    id: 'strata',
+    title: 'Strata',
+    protocol: 'openai',
+    hostId: strataHostId,
+    internalPort: strataPort,
+    pathSuffix: '/v1',
+    // The first release on the community registry. Its key file stays empty
+    // until Strata's API Key action runs, which reads here as no key.
+    versionRange: '>=0.2.13:0',
     healthCheck: 'primary',
     keySource: 'public',
     keyRequired: true,
@@ -235,7 +253,8 @@ export async function ensurePublicMounted(
 
 /**
  * Read the API key a dependency publishes, or `null` if it isn't available
- * (package too old to publish one, not installed, file missing, etc.).
+ * (package too old to publish one, not installed, file missing, or a key not
+ * generated yet, which some packages publish as `''`).
  */
 export async function readPublicApiKey(
   effects: T.Effects,
@@ -246,7 +265,7 @@ export async function readPublicApiKey(
     await ensurePublicMounted(effects, packageId)
     const read = publicCredentialsFile(packageId).read((c) => c.apiKey)
     return (
-      (await (mode === 'const' ? read.const(effects) : read.once())) ?? null
+      (await (mode === 'const' ? read.const(effects) : read.once())) || null
     )
   } catch {
     return null

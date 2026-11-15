@@ -104,7 +104,7 @@ async function resolveKey(
         `${b.title} is enabled but its API key could not be read from ` +
           `${b.id}:public/credentials.json. Make sure ${b.title} is installed, ` +
           `running, and at a version that publishes its public credentials ` +
-          `(${b.versionRange}).`,
+          `(${b.versionRange}). If it has an API Key action, run that first.`,
       )
     }
     return currentKey || PLACEHOLDER_API_KEY

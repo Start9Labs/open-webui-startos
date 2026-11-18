@@ -11,9 +11,9 @@
 - Optional self-hosted web search via [SearXNG](https://github.com/Start9Labs/searxng-startos), wired up for you so Open WebUI's web-search toggle works without entering a URL — whichever of the two you installed first.
 - An admin password reset action so you can recover the first admin account if you lose the credentials.
 
-### Package security updates
+### Runtime security
 
-Package revision **0.13.4:1** keeps Open WebUI 0.13.4 and its Playwright/browser versions unchanged. It updates Playwright's bundled Node.js to fix CVE-2026-111497 and runtime pip so tool/function requirement installation no longer trusts the compromised emSign ECC Root CA - G3 (CVE-2026-91403). This is not a browser certificate-store update. No configuration changes are required.
+The package includes security fixes for its browser driver (CVE-2026-111497) and tool/function requirement installer. The installer rejects the compromised emSign ECC Root CA - G3 (CVE-2026-91403). Browser certificate stores are separate and are not updated by this layer. No configuration changes are required.
 
 ## Getting set up
 

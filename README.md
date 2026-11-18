@@ -37,7 +37,7 @@
 
 Upstream's digest-pinned prebuilt image runs Python on Debian, with a thin `Dockerfile` layer that changes two runtime components:
 
-- **Playwright's Node.js.** Python Playwright runs its own bundled `driver/node`. The layer replaces it with the official matching-architecture Node from the stage pinned in `Dockerfile`. A build guard requires a strictly newer release of the same major, and verifies the installed binary.
+- **Playwright's Node.js.** Python Playwright runs its own bundled `driver/node`. The layer replaces it with the official matching-architecture Node from the stage pinned in `Dockerfile`. A build guard requires a strictly newer release of the same major, and verifies the installed binary. The default image includes the driver but no browser; this package does not enable upstream's browser-install step.
 - **pip's trusted roots.** Tool and function requirements use the application's interpreter and its pip. That pip trusts its vendored root certificates as well as system trust. The layer upgrades it to exclude the compromised emSign ECC Root CA - G3, rejecting servers whose certificates chain only to that root.
 
 Both changes target `/usr/local/bin/python`, the interpreter used by upstream's startup and requirement installer. Bootstrap pip uses verified system trust; the build rejects G3 in either the resulting pip bundle or system bundle.

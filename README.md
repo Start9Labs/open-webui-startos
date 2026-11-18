@@ -35,13 +35,18 @@
 
 ## Image and Container Runtime
 
-One prebuilt upstream image, running Python 3.12 on Debian 13.
+Upstream's digest-pinned prebuilt image runs Python on Debian, with a thin `Dockerfile` layer that changes two runtime components:
 
-| Property      | Value                           |
-| ------------- | ------------------------------- |
-| Image         | `ghcr.io/open-webui/open-webui` |
-| Architectures | x86_64, aarch64                 |
-| Entrypoint    | Upstream's                      |
+- **Playwright's Node.js.** Python Playwright runs its own bundled `driver/node`. The layer replaces it with the official matching-architecture Node from the stage pinned in `Dockerfile`. A build guard requires a strictly newer release of the same major, and verifies the installed binary. The default image includes the driver but no browser; this package does not enable upstream's browser-install step.
+- **pip's trusted roots.** Tool and function requirements use the application's interpreter and its pip. That pip trusts its vendored root certificates as well as system trust. The layer upgrades it to exclude the compromised emSign ECC Root CA - G3, rejecting servers whose certificates chain only to that root.
+
+Both changes target `/usr/local/bin/python`, the interpreter used by upstream's startup and requirement installer. Bootstrap pip uses verified system trust; the build rejects G3 in either the resulting pip bundle or system bundle.
+
+| Property      | Value                                                                 |
+| ------------- | --------------------------------------------------------------------- |
+| Image         | Local security wrapper; upstream and Node digest pins in `Dockerfile` |
+| Architectures | x86_64, aarch64                                                       |
+| Entrypoint    | Upstream's                                                            |
 
 | Subcontainer           | Purpose                                                 |
 | ---------------------- | ------------------------------------------------------- |
@@ -226,7 +231,7 @@ Both volumes are copied — `sdk.Backups.ofVolumes('open-webui', 'startos')` —
 
 ```yaml
 package_id: open-webui
-image: ghcr.io/open-webui/open-webui
+image: ghcr.io/open-webui/open-webui # extended by the package's Dockerfile
 architectures:
   - x86_64
   - aarch64

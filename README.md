@@ -42,11 +42,11 @@ Upstream's digest-pinned prebuilt image runs Python on Debian, with a thin `Dock
 
 Both changes target `/usr/local/bin/python`, the interpreter used by upstream's startup and requirement installer. Bootstrap pip uses verified system trust; the build rejects G3 in either the resulting pip bundle or system bundle.
 
-| Property      | Value                           |
-| ------------- | ------------------------------- |
+| Property      | Value                                                                 |
+| ------------- | --------------------------------------------------------------------- |
 | Image         | Local security wrapper; upstream and Node digest pins in `Dockerfile` |
-| Architectures | x86_64, aarch64                 |
-| Entrypoint    | Upstream's                      |
+| Architectures | x86_64, aarch64                                                       |
+| Entrypoint    | Upstream's                                                            |
 
 | Subcontainer           | Purpose                                                 |
 | ---------------------- | ------------------------------------------------------- |

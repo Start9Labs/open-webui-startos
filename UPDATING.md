@@ -4,14 +4,23 @@ Open WebUI ships as a prebuilt GHCR image extended by two carried fixes: Python 
 
 ## Determining the upstream version
 
-- **Open WebUI** — https://github.com/open-webui/open-webui/releases
+- **Open WebUI** — https://github.com/open-webui/open-webui
+
+  List GitHub tags and select the newest stable version, not the release marked Latest:
 
   ```sh
-  gh release list -R open-webui/open-webui --limit 20
+  gh api 'repos/open-webui/open-webui/tags?per_page=100' --jq '.[].name'
+  ```
+
+  Read the release notes for the bumped range. Database schema changes require major scrutiny even for a patch release; upstream runs its own migrations.
+
+  Verify the exact GHCR tag resolves for both amd64 and arm64, and note its index digest (replace `<version>` with the selected tag without its leading `v`):
+
+  ```sh
   docker buildx imagetools inspect ghcr.io/open-webui/open-webui:<version>
   ```
 
-  Select a stable release and resolve its multi-architecture index digest for amd64 and arm64. Read the bumped range's release notes; database changes need major scrutiny even in a patch release. Both carried fixes target `/usr/local/bin/python`; retarget them if upstream's `backend/start.sh` changes interpreters.
+  Both carried fixes target `/usr/local/bin/python`; retarget them if upstream's `backend/start.sh` changes interpreters.
 
 - **Node.js** — https://nodejs.org/dist/index.json
 
@@ -38,4 +47,4 @@ Open WebUI ships as a prebuilt GHCR image extended by two carried fixes: Python 
 - Set the `node` stage to the selected matching-major Node tag and index digest. Its executed version is the replacement authority; the build guard compares both runtimes before copying and verifies the copy.
 - Update the `pip==` pin, retaining verified-system-trust bootstrap and the G3 build checks.
 
-Remove each override's steps once it retires. When both retire, remove `Dockerfile` and return `images['open-webui'].source` in `startos/manifest/index.ts` to the upstream `dockerTag`, retaining the selected tag and digest.
+Remove each override's steps once it retires. When both retire, remove `Dockerfile` and set `images['open-webui'].source` in `startos/manifest/index.ts` back to `{ dockerTag: 'ghcr.io/open-webui/open-webui:<version>' }`.

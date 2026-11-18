@@ -11,10 +11,6 @@
 - Optional self-hosted web search via [SearXNG](https://github.com/Start9Labs/searxng-startos), wired up for you so Open WebUI's web-search toggle works without entering a URL — whichever of the two you installed first.
 - An admin password reset action so you can recover the first admin account if you lose the credentials.
 
-### Runtime security
-
-The package includes security fixes for its browser driver (CVE-2026-111497) and tool/function requirement installer. The installer rejects the compromised emSign ECC Root CA - G3 (CVE-2026-91403). Browser certificate stores are separate and are not updated by this layer. No configuration changes are required.
-
 ## Getting set up
 
 Installing takes a few minutes: StartOS starts Open WebUI once during install so it can create its database and be configured before you ever open it. The progress bar shows this as **Copying bundled models**, then **Preparing the database and models**.

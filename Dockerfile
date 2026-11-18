@@ -1,4 +1,4 @@
-FROM node:24.22.1-bookworm-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c AS node
+FROM node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS node
 FROM ghcr.io/open-webui/open-webui:0.13.4@sha256:d5168bfbc28609eff5bea1b438dd864cf64d185cf6582c02244865e18385b901
 
 # Patch Python Playwright's bundled executable, not system or frontend Node.
@@ -8,10 +8,18 @@ import shutil
 import subprocess
 from playwright._impl._driver import compute_driver_executable
 
+
+def node_version(binary):
+    version = subprocess.check_output([binary, '--version'], text=True).strip()
+    return tuple(map(int, version.removeprefix('v').split('.')))
+
+
 node, _ = compute_driver_executable()
+new = node_version('/tmp/playwright-node')
+old = node_version(node)
+assert old[0] == new[0] and old < new, (old, new)
 shutil.copy('/tmp/playwright-node', node)
-version = subprocess.check_output([node, '--version'], text=True).strip()
-assert tuple(map(int, version.removeprefix('v').split('.'))) >= (24, 22, 1), version
+assert node_version(node) == new
 PY
 
 # Plugin requirements use this interpreter's pip, including its vendored certifi.

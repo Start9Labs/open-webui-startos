@@ -1,28 +1,41 @@
 # Updating the upstream version
 
-Open WebUI ships as a thin security wrapper around the prebuilt GHCR image. Production pins live in `Dockerfile`; the manifest uses `dockerBuild`.
+Open WebUI ships as a prebuilt GHCR image extended by two carried fixes: Python Playwright's private Node and the application's pip. Each retires when the selected upstream image includes its fix.
 
 ## Determining the upstream version
 
-- **Open WebUI** — https://github.com/open-webui/open-webui
-
-  List GitHub tags and select the newest stable version, not the release marked Latest:
+- **Open WebUI** — https://github.com/open-webui/open-webui/releases
 
   ```sh
-  gh api 'repos/open-webui/open-webui/tags?per_page=100' --jq '.[].name'
-  ```
-
-  Read the release notes for the bumped range. Database schema changes require major scrutiny even for a patch release; upstream runs its own migrations.
-
-  Verify the exact GHCR tag and its index digest resolve for both amd64 and arm64 before updating the final `FROM` in `Dockerfile`:
-
-  ```sh
+  gh release list -R open-webui/open-webui --limit 20
   docker buildx imagetools inspect ghcr.io/open-webui/open-webui:<version>
   ```
 
-## Security runtime pins
+  Select a stable release and resolve its multi-architecture index digest for amd64 and arm64. Read the bumped range's release notes; database changes need major scrutiny even in a patch release. Both carried fixes target `/usr/local/bin/python`; retarget them if upstream's `backend/start.sh` changes interpreters.
 
-- **Node.js** — the first `FROM` selects the official matching-architecture Node binary. Keep a supported Node 24 release at least 24.22.1 for CVE-2026-111497, and update its digest and test expectations. The build check enforces the security floor. Do not replace only system Node or the upstream frontend build stage: Python Playwright invokes its bundled `driver/node`. Retain Playwright and its browser protocol unless deliberately testing an upstream upgrade.
-- **pip** — the runtime interpreter `/usr/local/bin/python` must match upstream `start.sh`'s `python3`; plugin requirements use `sys.executable -m pip`. Keep its pip vendored certifi at least 2026.10.19 for CVE-2026-91403, not merely the separately installed application certifi. Current pip 26.3 vendors certifi 2026.10.23. Bootstrap pip through verified system trust, and preserve build checks for the exact compromised G3 fingerprint. This wrapper makes no browser-root-store remediation claim.
+- **Node.js** — https://nodejs.org/dist/index.json
 
-Inspect the new image's actual interpreter/driver paths and runtime versions, including pip trust, before adjusting these pins. Update `startos/versions/current.ts`, relevant README details and focused regression expectations. Run `make test-security` for amd64 and arm64 through `helix-build`; browser installation in this recipe is disposable and follows Playwright's pinned revision. Full package builds remain in CI.
+  Select the newest patched release in the major bundled by the new image's Playwright. Upstream's requirements identify Playwright; its driver build identifies Node:
+
+  ```sh
+  curl -fsSL "https://raw.githubusercontent.com/open-webui/open-webui/v<version>/backend/requirements.txt" | grep '^playwright=='
+  curl -fsSL "https://raw.githubusercontent.com/microsoft/playwright/v<playwright>/utils/build/build-playwright-driver.sh" | grep 'NODE_VERSION='
+  ```
+
+  The replacement retires once no newer release of that major marked `"security": true` remains in the Node index. The image build rejects a replacement that changes the major or is not strictly newer than the bundled runtime.
+
+- **pip** — https://pypi.org/project/pip/
+
+  Select the newest pip whose vendored certifi (listed in `src/pip/_vendor/vendor.txt` at its release tag) excludes emSign ECC Root CA - G3. Certifi 2026.10.19 or later does. Retire this override once the new image's own pip vendors fixed trust:
+
+  ```sh
+  docker run --rm --entrypoint python ghcr.io/open-webui/open-webui:<version> -c 'import pip; from pip._vendor import certifi; print(pip.__version__, certifi.__version__)'
+  ```
+
+## Applying the bump
+
+- Set the final `FROM` in `Dockerfile` to the selected Open WebUI tag and index digest.
+- Set the `node` stage to the selected matching-major Node tag and index digest. Its executed version is the replacement authority; the build guard compares both runtimes before copying and verifies the copy.
+- Update the `pip==` pin, retaining verified-system-trust bootstrap and the G3 build checks.
+
+Remove each override's steps once it retires. When both retire, remove `Dockerfile` and return `images['open-webui'].source` in `startos/manifest/index.ts` to the upstream `dockerTag`, retaining the selected tag and digest.

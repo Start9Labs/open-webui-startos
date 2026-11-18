@@ -11,6 +11,10 @@
 - Optional self-hosted web search via [SearXNG](https://github.com/Start9Labs/searxng-startos), wired up for you so Open WebUI's web-search toggle works without entering a URL — whichever of the two you installed first.
 - An admin password reset action so you can recover the first admin account if you lose the credentials.
 
+### Package security updates
+
+Package revision **0.13.4:1** keeps Open WebUI 0.13.4 and its Playwright/browser versions unchanged. It updates Playwright's bundled Node.js to fix CVE-2026-111497 and runtime pip so tool/function requirement installation no longer trusts the compromised emSign ECC Root CA - G3 (CVE-2026-91403). This is not a browser certificate-store update. No configuration changes are required.
+
 ## Getting set up
 
 Installing takes a few minutes: StartOS starts Open WebUI once during install so it can create its database and be configured before you ever open it. The progress bar shows this as **Copying bundled models**, then **Preparing the database and models**.

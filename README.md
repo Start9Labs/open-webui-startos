@@ -35,11 +35,15 @@
 
 ## Image and Container Runtime
 
-One prebuilt upstream image, running Python 3.12 on Debian 13.
+A thin Dockerfile wrapper around Open WebUI 0.13.4, running Python 3.12 on Debian 13. The upstream application, entrypoint and Playwright 1.60.0/browser protocol remain unchanged.
+
+The wrapper replaces **Python Playwright's own `driver/node`** with Node.js 24.22.1 from the official, matching-architecture Node image (CVE-2026-111497). Changing a system or frontend-build Node does not patch this runtime. The driver path is resolved through Playwright using `/usr/local/bin/python`, the same interpreter upstream's `start.sh` uses via `python3`.
+
+That interpreter also runs `sys.executable -m pip install` for tool/function requirements. Its pip is upgraded from 25.0.1 to 26.3, whose vendored certifi 2026.10.23 excludes the compromised emSign ECC Root CA - G3 (CVE-2026-91403). Bootstrap installation uses the already-fixed system CA bundle with TLS verification enabled. Build assertions check the driver version and G3's absence from both runtime pip and system trust. Other roots are maintained by the canonical CA bundles, not blanket issuer removal. **This does not refresh or certify browser certificate stores.**
 
 | Property      | Value                           |
 | ------------- | ------------------------------- |
-| Image         | `ghcr.io/open-webui/open-webui` |
+| Image         | Local security wrapper; upstream and Node digest pins in `Dockerfile` |
 | Architectures | x86_64, aarch64                 |
 | Entrypoint    | Upstream's                      |
 
@@ -48,6 +52,10 @@ One prebuilt upstream image, running Python 3.12 on Debian 13.
 | `open-webui-sub`       | The `primary` daemon — the one to `attach` to           |
 | `open-webui-bootstrap` | Temporary; the install-time first boot                  |
 | `webui-model-seed`     | Temporary; copies the baked model cache onto the volume |
+
+### Focused runtime security checks
+
+Run `helix-build -- make test-security` for amd64, or `helix-build -- make test-security SECURITY_PLATFORM=linux/arm64` for arm64 (requires native support or configured emulation). This builds the production wrapper, then installs the Chromium revision selected by the unchanged Playwright in a disposable container, matching upstream's optional browser setup. It checks the effective Python/driver versions, driver-side Brotli decoding, browser launch/navigation/JavaScript, and pip's selected verified TLS context and CA bundles, including G3 exclusion and retention of the unrelated emSign G1 root. Browser downloads and dependencies are test-only; they are not added to the shipped image.
 
 ## Volume and Data Layout
 
@@ -226,7 +234,7 @@ Both volumes are copied — `sdk.Backups.ofVolumes('open-webui', 'startos')` —
 
 ```yaml
 package_id: open-webui
-image: ghcr.io/open-webui/open-webui
+image: local Dockerfile security wrapper around ghcr.io/open-webui/open-webui:0.13.4
 architectures:
   - x86_64
   - aarch64

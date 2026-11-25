@@ -1,5 +1,5 @@
 FROM node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS node
-FROM ghcr.io/open-webui/open-webui:0.13.4@sha256:d5168bfbc28609eff5bea1b438dd864cf64d185cf6582c02244865e18385b901
+FROM ghcr.io/open-webui/open-webui:0.13.5@sha256:e0dc5a8bf5c71cadf339d1e7b9408b357da75fb2854f82cad57a1609fadf2a22
 
 # Patch Python Playwright's bundled executable, not system or frontend Node.
 RUN --mount=from=node,source=/usr/local/bin/node,target=/tmp/playwright-node \
